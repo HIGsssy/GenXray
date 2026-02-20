@@ -199,6 +199,7 @@ async function postSuccess(
         { name: "Scheduler", value: job.scheduler, inline: true },
         { name: "Steps", value: String(job.steps), inline: true },
         { name: "CFG", value: String(job.cfg), inline: true },
+        { name: "Seed", value: String(job.seed), inline: true },
       )
       .setFooter({ text: "Prompt hidden — requester can click Share Prompt to reveal" });
 

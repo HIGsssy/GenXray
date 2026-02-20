@@ -22,6 +22,7 @@ export const CUSTOM_ID = {
   MODAL_FIELD_NEG: "gen_field_negative",
   MODAL_FIELD_STEPS: "gen_field_steps",
   MODAL_FIELD_CFG: "gen_field_cfg",
+  MODAL_FIELD_SEED: "gen_field_seed",
   // Prefix for share-prompt buttons on output posts — full customId: `${prefix}:${jobId}`
   SHARE_PROMPT_PREFIX: "gen_share_prompt",
 } as const;
@@ -36,11 +37,17 @@ export interface DraftParams {
   scheduler: string;
   steps: number;
   cfg: number;
+  seed: number;
   positivePrompt: string;
   negativePrompt: string;
 }
 
 const _drafts = new Map<string, DraftParams>();
+
+/** Generate a random seed in the ComfyUI valid range (0–4 294 967 295). */
+function randomSeed(): number {
+  return Math.floor(Math.random() * 4_294_967_296);
+}
 
 export function initDraft(userId: string, options: ComfyOptions): DraftParams {
   const draft: DraftParams = {
@@ -49,6 +56,7 @@ export function initDraft(userId: string, options: ComfyOptions): DraftParams {
     scheduler: options.schedulers[0] ?? "",
     steps: 20,
     cfg: 7,
+    seed: randomSeed(),
     positivePrompt: "",
     negativePrompt: "",
   };
@@ -87,6 +95,7 @@ export function buildFormEmbed(draft: DraftParams): EmbedBuilder {
       { name: "Scheduler", value: draft.scheduler || "_not selected_", inline: true },
       { name: "Steps", value: String(draft.steps), inline: true },
       { name: "CFG", value: String(draft.cfg), inline: true },
+      { name: "Seed", value: String(draft.seed), inline: true },
       {
         name: "Positive Prompt",
         value: draft.positivePrompt.length > 0 ? `\`\`\`${draft.positivePrompt.slice(0, 500)}\`\`\`` : "_not set_",

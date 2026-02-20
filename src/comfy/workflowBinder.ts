@@ -39,11 +39,12 @@ export type BindResult = BindOk | BindError;
 //  steps / cfg are written ONLY to node "239".
 // ---------------------------------------------------------------------------
 
-const REQUIRED_NODES = ["152", "268", "4", "239", "249", "52", "118"] as const;
+const REQUIRED_NODES = ["152", "256", "268", "4", "239", "249", "52", "118"] as const;
 
 /** Fields each node must have. Used by validate(). */
 const REQUIRED_FIELDS: Record<string, string[]> = {
   "152": ["ckpt_name"],
+  "256": ["seed"],
   "268": ["text"],
   "4": ["text"],
   "239": ["sampler_name", "scheduler", "steps", "cfg"],
@@ -147,6 +148,9 @@ export function bind(job: JobRow): BindResult {
 
   // Node "152" — checkpoint model
   setField(wf, "152", "ckpt_name", job.model);
+
+  // Node "256" — Seed Generator: inject resolved seed
+  setField(wf, "256", "seed", job.seed);
 
   // Node "268" — positive prompt
   setField(wf, "268", "text", job.positivePrompt);

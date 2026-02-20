@@ -7,6 +7,11 @@ import {
 import { z } from "zod";
 import { CUSTOM_ID, type DraftParams } from "./formEmbed.js";
 
+/** Generate a random seed in the ComfyUI valid range (0–4 294 967 295). */
+export function randomSeed(): number {
+  return Math.floor(Math.random() * 4_294_967_296);
+}
+
 export function buildPromptModal(draft: DraftParams): ModalBuilder {
   const modal = new ModalBuilder()
     .setCustomId(CUSTOM_ID.MODAL_PROMPTS)
@@ -44,11 +49,20 @@ export function buildPromptModal(draft: DraftParams): ModalBuilder {
     .setMaxLength(5)
     .setValue(String(draft.cfg));
 
+  const seedInput = new TextInputBuilder()
+    .setCustomId(CUSTOM_ID.MODAL_FIELD_SEED)
+    .setLabel("Seed (blank or 'random' = re-roll)")
+    .setStyle(TextInputStyle.Short)
+    .setRequired(false)
+    .setMaxLength(10)
+    .setValue(String(draft.seed));
+
   modal.addComponents(
     new ActionRowBuilder<TextInputBuilder>().addComponents(positiveInput),
     new ActionRowBuilder<TextInputBuilder>().addComponents(negativeInput),
     new ActionRowBuilder<TextInputBuilder>().addComponents(stepsInput),
     new ActionRowBuilder<TextInputBuilder>().addComponents(cfgInput),
+    new ActionRowBuilder<TextInputBuilder>().addComponents(seedInput),
   );
 
   return modal;
@@ -70,6 +84,23 @@ export const ModalSchema = z.object({
     .number()
     .min(1, "CFG must be at least 1.")
     .max(30, "CFG cannot exceed 30."),
+  // Blank, whitespace-only, or the word "random" → generate a new random seed at parse time.
+  // Otherwise parse as an integer in the ComfyUI valid range 0–4 294 967 295.
+  seedRaw: z.string().default(""),
 });
 
 export type ModalValues = z.infer<typeof ModalSchema>;
+
+/**
+ * Resolve the raw seed string from `ModalSchema` into a concrete integer.
+ * Blank / "random" → fresh random seed.
+ * A valid integer string → that seed (clamped to 0–4 294 967 295).
+ * Invalid (non-numeric) → returns null so the caller can surface an error.
+ */
+export function resolveSeed(seedRaw: string): number | null {
+  const trimmed = seedRaw.trim().toLowerCase();
+  if (trimmed === "" || trimmed === "random") return randomSeed();
+  const parsed = Number(trimmed);
+  if (!Number.isInteger(parsed) || parsed < 0 || parsed > 4_294_967_295) return null;
+  return parsed;
+}

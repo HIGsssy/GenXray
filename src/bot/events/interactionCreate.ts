@@ -10,7 +10,7 @@ import {
   mergeDraft,
   deleteDraft,
 } from "../components/formEmbed.js";
-import { buildPromptModal, ModalSchema } from "../components/promptModal.js";
+import { buildPromptModal, ModalSchema, resolveSeed } from "../components/promptModal.js";
 import { fetchOptions } from "../../comfy/objectInfo.js";
 import { validate as validateWorkflow, bind } from "../../comfy/workflowBinder.js";
 import { insertJob, countQueuedBefore } from "../../db/jobs.js";
@@ -117,12 +117,13 @@ export async function onInteractionCreate(interaction: Interaction): Promise<voi
         scheduler: draft.scheduler,
         steps: draft.steps,
         cfg: draft.cfg,
+        seed: draft.seed,
         positivePrompt: draft.positivePrompt,
         negativePrompt: draft.negativePrompt,
       };
 
       // Final bind validation with actual values
-      const tempJob = {
+      const tempJob: typeof params & { id: string; discordMessageId: null; status: "queued"; comfyPromptId: null; outputImages: null; errorMessage: null; createdAt: number; startedAt: null; completedAt: null } = {
         ...params,
         id: "preview",
         discordMessageId: null,
@@ -237,6 +238,7 @@ export async function onInteractionCreate(interaction: Interaction): Promise<voi
       negativePrompt: interaction.fields.getTextInputValue(CUSTOM_ID.MODAL_FIELD_NEG) || "",
       steps: interaction.fields.getTextInputValue(CUSTOM_ID.MODAL_FIELD_STEPS),
       cfg: interaction.fields.getTextInputValue(CUSTOM_ID.MODAL_FIELD_CFG),
+      seedRaw: interaction.fields.getTextInputValue(CUSTOM_ID.MODAL_FIELD_SEED) || "",
     };
 
     const parsed = ModalSchema.safeParse(raw);
@@ -249,11 +251,21 @@ export async function onInteractionCreate(interaction: Interaction): Promise<voi
       return;
     }
 
+    const resolvedSeed = resolveSeed(parsed.data.seedRaw);
+    if (resolvedSeed === null) {
+      await interaction.reply({
+        content: "• **seed**: Must be a whole number between 0 and 4,294,967,295, or leave blank for random.",
+        ephemeral: true,
+      });
+      return;
+    }
+
     const updated = mergeDraft(userId, {
       positivePrompt: parsed.data.positivePrompt,
       negativePrompt: parsed.data.negativePrompt,
       steps: parsed.data.steps,
       cfg: parsed.data.cfg,
+      seed: resolvedSeed,
     });
 
     const options = await fetchOptions();

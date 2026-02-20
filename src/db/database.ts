@@ -25,8 +25,19 @@ export function getDb(): Database.Database {
 
 function runMigrations(db: Database.Database): void {
   const migrationDir = resolve(__dirname, "../../migrations");
-  const sql = readFileSync(`${migrationDir}/001_initial.sql`, "utf-8");
-  db.exec(sql);
+
+  // 001 — initial schema (idempotent, uses IF NOT EXISTS)
+  const sql001 = readFileSync(`${migrationDir}/001_initial.sql`, "utf-8");
+  db.exec(sql001);
+
+  // 002 — add seed column (guard against duplicate ALTER TABLE)
+  const cols = db.prepare("PRAGMA table_info(jobs)").all() as { name: string }[];
+  if (!cols.some((c) => c.name === "seed")) {
+    const sql002 = readFileSync(`${migrationDir}/002_add_seed.sql`, "utf-8");
+    db.exec(sql002);
+    logger.info("Migration 002: seed column added");
+  }
+
   logger.debug("Database migrations applied");
 }
 

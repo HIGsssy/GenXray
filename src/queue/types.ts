@@ -10,7 +10,8 @@ export interface JobParams {
   sampler: string;
   scheduler: string;
   steps: number; // 1–150
-  cfg: number; // 1.0–30.0
+  cfg: number;   // 1.0–30.0
+  seed: number;  // 0–4294967295
   positivePrompt: string;
   negativePrompt: string;
 }
