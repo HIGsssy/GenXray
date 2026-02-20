@@ -6,6 +6,7 @@ import {
   StringSelectMenuBuilder,
 } from "discord.js";
 import type { ComfyOptions } from "../../comfy/objectInfo.js";
+import type { JobRow } from "../../queue/types.js";
 
 // ---------------------------------------------------------------------------
 // Custom ID constants
@@ -27,6 +28,10 @@ export const CUSTOM_ID = {
   SHARE_PROMPT_PREFIX: "gen_share_prompt",
   // Prefix for re-roll buttons on output posts — full customId: `${prefix}:${jobId}`
   REROLL_PREFIX: "gen_reroll",
+  // Prefix for delete buttons on output posts — full customId: `${prefix}:${jobId}`
+  DELETE_PREFIX: "gen_delete",
+  // Prefix for edit buttons on output posts — full customId: `${prefix}:${jobId}`
+  EDIT_PREFIX: "gen_edit",
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -54,13 +59,29 @@ function randomSeed(): number {
 export function initDraft(userId: string, options: ComfyOptions): DraftParams {
   const draft: DraftParams = {
     model: options.models[0] ?? "",
-    sampler: options.samplers[0] ?? "",
-    scheduler: options.schedulers[0] ?? "",
-    steps: 20,
-    cfg: 7,
+    sampler: options.samplers.includes("dpmpp_2m_sde") ? "dpmpp_2m_sde" : (options.samplers[0] ?? ""),
+    scheduler: options.schedulers.includes("karras") ? "karras" : (options.schedulers[0] ?? ""),
+    steps: 28,
+    cfg: 5,
     seed: randomSeed(),
     positivePrompt: "",
     negativePrompt: "",
+  };
+  _drafts.set(userId, draft);
+  return draft;
+}
+
+/** Seed a draft from an existing completed job (used by the Edit button on output posts). */
+export function initDraftFromJob(userId: string, job: JobRow): DraftParams {
+  const draft: DraftParams = {
+    model: job.model,
+    sampler: job.sampler,
+    scheduler: job.scheduler,
+    steps: job.steps,
+    cfg: job.cfg,
+    seed: job.seed,
+    positivePrompt: job.positivePrompt,
+    negativePrompt: job.negativePrompt,
   };
   _drafts.set(userId, draft);
   return draft;
