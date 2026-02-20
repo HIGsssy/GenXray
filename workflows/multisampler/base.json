@@ -1,0 +1,369 @@
+{
+  "2": {
+    "inputs": {
+      "stop_at_clip_layer": -2,
+      "clip": [
+        "152",
+        1
+      ]
+    },
+    "class_type": "CLIPSetLastLayer",
+    "_meta": {
+      "title": "CLIP Set Last Layer"
+    }
+  },
+  "4": {
+    "inputs": {
+      "text": "lazyhand, loli, child, underage, light particles, jpeg artifacts, blurry, red pupils, artist name, artist logo, signature, patreon username, patreon logo, shiny clothes, shiny skin, greyscale",
+      "clip": [
+        "2",
+        0
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP Text Encode (Prompt) Negative :("
+    }
+  },
+  "6": {
+    "inputs": {
+      "width": 832,
+      "height": 1216,
+      "batch_size": 1
+    },
+    "class_type": "EmptyLatentImage",
+    "_meta": {
+      "title": "Empty Latent Image"
+    }
+  },
+  "42": {
+    "inputs": {
+      "samples": [
+        "249",
+        3
+      ],
+      "vae": [
+        "152",
+        2
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE Decode"
+    }
+  },
+  "50": {
+    "inputs": {
+      "model_name": "bbox/face_yolov8m.pt"
+    },
+    "class_type": "UltralyticsDetectorProvider",
+    "_meta": {
+      "title": "UltralyticsDetectorProvider"
+    }
+  },
+  "51": {
+    "inputs": {
+      "model_name": "sam_vit_b_01ec64.pth",
+      "device_mode": "AUTO"
+    },
+    "class_type": "SAMLoader",
+    "_meta": {
+      "title": "SAMLoader (Impact)"
+    }
+  },
+  "52": {
+    "inputs": {
+      "guide_size": 512,
+      "guide_size_for": true,
+      "max_size": 1248,
+      "seed": 975004437216126,
+      "steps": 10,
+      "cfg": 5,
+      "sampler_name": "dpmpp_2m_sde",
+      "scheduler": "karras",
+      "denoise": 0.5,
+      "feather": 5,
+      "noise_mask": true,
+      "force_inpaint": false,
+      "bbox_threshold": 0.5,
+      "bbox_dilation": 15,
+      "bbox_crop_factor": 3,
+      "sam_detection_hint": "center-1",
+      "sam_dilation": 0,
+      "sam_threshold": 0.93,
+      "sam_bbox_expansion": 0,
+      "sam_mask_hint_threshold": 0.7,
+      "sam_mask_hint_use_negative": "False",
+      "drop_size": 10,
+      "wildcard": "",
+      "cycle": 1,
+      "inpaint_model": true,
+      "noise_mask_feather": 20,
+      "tiled_encode": false,
+      "tiled_decode": false,
+      "image": [
+        "42",
+        0
+      ],
+      "model": [
+        "152",
+        0
+      ],
+      "clip": [
+        "2",
+        0
+      ],
+      "vae": [
+        "152",
+        2
+      ],
+      "positive": [
+        "268",
+        0
+      ],
+      "negative": [
+        "4",
+        0
+      ],
+      "bbox_detector": [
+        "50",
+        0
+      ],
+      "sam_model_opt": [
+        "51",
+        0
+      ]
+    },
+    "class_type": "FaceDetailer",
+    "_meta": {
+      "title": "FaceDetailer - FACES"
+    }
+  },
+  "101": {
+    "inputs": {
+      "mimic_scale": 25,
+      "threshold_percentile": 0.9,
+      "model": [
+        "152",
+        0
+      ]
+    },
+    "class_type": "DynamicThresholdingSimple",
+    "_meta": {
+      "title": "DynamicThresholdingSimple"
+    }
+  },
+  "111": {
+    "inputs": {
+      "upscale_method": "nearest-exact",
+      "scale_by": 1.5,
+      "samples": [
+        "239",
+        3
+      ]
+    },
+    "class_type": "LatentUpscaleBy",
+    "_meta": {
+      "title": "Upscale Latent By"
+    }
+  },
+  "118": {
+    "inputs": {
+      "guide_size": 512,
+      "guide_size_for": true,
+      "max_size": 1248,
+      "seed": 1018489102702975,
+      "steps": 12,
+      "cfg": 3,
+      "sampler_name": "dpmpp_2m_sde",
+      "scheduler": "karras",
+      "denoise": 0.4,
+      "feather": 5,
+      "noise_mask": true,
+      "force_inpaint": false,
+      "bbox_threshold": 0.5,
+      "bbox_dilation": 15,
+      "bbox_crop_factor": 3,
+      "sam_detection_hint": "center-1",
+      "sam_dilation": 0,
+      "sam_threshold": 0.93,
+      "sam_bbox_expansion": 0,
+      "sam_mask_hint_threshold": 0.7,
+      "sam_mask_hint_use_negative": "False",
+      "drop_size": 10,
+      "wildcard": "",
+      "cycle": 1,
+      "inpaint_model": true,
+      "noise_mask_feather": 20,
+      "tiled_encode": false,
+      "tiled_decode": false,
+      "image": [
+        "52",
+        0
+      ],
+      "model": [
+        "152",
+        0
+      ],
+      "clip": [
+        "2",
+        0
+      ],
+      "vae": [
+        "152",
+        2
+      ],
+      "positive": [
+        "268",
+        0
+      ],
+      "negative": [
+        "4",
+        0
+      ],
+      "bbox_detector": [
+        "120",
+        0
+      ],
+      "sam_model_opt": [
+        "119",
+        0
+      ]
+    },
+    "class_type": "FaceDetailer",
+    "_meta": {
+      "title": "FaceDetailer - HANDS"
+    }
+  },
+  "119": {
+    "inputs": {
+      "model_name": "sam_vit_b_01ec64.pth",
+      "device_mode": "AUTO"
+    },
+    "class_type": "SAMLoader",
+    "_meta": {
+      "title": "SAMLoader (Impact)"
+    }
+  },
+  "120": {
+    "inputs": {
+      "model_name": "bbox/hand_yolov8s.pt"
+    },
+    "class_type": "UltralyticsDetectorProvider",
+    "_meta": {
+      "title": "UltralyticsDetectorProvider"
+    }
+  },
+  "152": {
+    "inputs": {
+      "ckpt_name": "animayhemPaleRider_v30PlainsDrifter.safetensors"
+    },
+    "class_type": "Checkpoint Loader Simple Mikey",
+    "_meta": {
+      "title": "Checkpoint Loader Simple (Mikey)"
+    }
+  },
+  "239": {
+    "inputs": {
+      "seed": [
+        "256",
+        0
+      ],
+      "steps": 35,
+      "cfg": 4.5,
+      "sampler_name": "dpmpp_2m_sde",
+      "scheduler": "karras",
+      "denoise": 1,
+      "preview_method": "auto",
+      "vae_decode": "true",
+      "model": [
+        "101",
+        0
+      ],
+      "positive": [
+        "268",
+        0
+      ],
+      "negative": [
+        "4",
+        0
+      ],
+      "latent_image": [
+        "6",
+        0
+      ]
+    },
+    "class_type": "KSampler (Efficient)",
+    "_meta": {
+      "title": "KSampler (Efficient)"
+    }
+  },
+  "249": {
+    "inputs": {
+      "seed": 602905948092914,
+      "steps": 12,
+      "cfg": 5,
+      "sampler_name": "dpmpp_2m_sde",
+      "scheduler": "karras",
+      "denoise": 0.5,
+      "preview_method": "auto",
+      "vae_decode": "true",
+      "model": [
+        "152",
+        0
+      ],
+      "positive": [
+        "268",
+        0
+      ],
+      "negative": [
+        "4",
+        0
+      ],
+      "latent_image": [
+        "111",
+        0
+      ]
+    },
+    "class_type": "KSampler (Efficient)",
+    "_meta": {
+      "title": "KSampler (Efficient)"
+    }
+  },
+  "256": {
+    "inputs": {
+      "seed": 909648876,
+      "increment": 0
+    },
+    "class_type": "Seed Generator (Image Saver)",
+    "_meta": {
+      "title": "Seed Generator (Image Saver)"
+    }
+  },
+  "264": {
+    "inputs": {
+      "filename_prefix": "ComfyUI",
+      "images": [
+        "118",
+        0
+      ]
+    },
+    "class_type": "SaveImage",
+    "_meta": {
+      "title": "Save Image"
+    }
+  },
+  "268": {
+    "inputs": {
+      "text": "1female, solo, black hair: (lime green highlights 1.5), lime green eyes, perfect eyes, vertical pupils, tomboy haircut, multiple facial piercings, black lipstick, heavy eyeliner, long eyelashes, large breasts, curvy hips, abs, tattoos, punk outfit, face close up, smug expression, (feathered wings: black and green feathers, alternating feathers)",
+      "clip": [
+        "2",
+        0
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP Text Encode (Prompt)"
+    }
+  }
+}

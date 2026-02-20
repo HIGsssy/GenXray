@@ -1,0 +1,48 @@
+Project Name: ComfyGen Discord Bot
+
+Goal:
+Build a Discord bot that enables image generation via a ComfyUI backend using preconfigured workflows. The bot operates only in designated channels and provides a form-based UI (embed + dropdowns + modals) to configure settings, then submits jobs through a multi-user queue and posts completed images back to Discord.
+
+Non-goals (for v1):
+
+No free-form workflow upload by users
+
+No arbitrary node graph editing
+
+No multi-GPU scheduling
+
+No “advanced” controls like LoRA browsing, resolution changes, img2img, etc. unless explicitly added later
+
+Core UX:
+
+/gen launches an ephemeral “form” embed.
+
+Users select model/sampler/scheduler via dropdowns (detected from ComfyUI).
+
+Users edit prompts + steps/cfg via a modal.
+
+“Generate” enqueues a job and returns queue position.
+
+Runner submits to ComfyUI and posts output images in-channel.
+
+Core Constraints:
+
+Keep it safe, stable, predictable.
+
+Use a standardized workflow file under /workflows/multisampler/base.json
+
+Follow the injection rules exactly (steps/cfg only affect base sampler; sampler/scheduler consistent everywhere).
+
+Deployment target:
+
+Dev: local bot, remote or local ComfyUI
+
+Prod: Rocky Linux server, bot managed by systemd or pm2
+
+Quality bar:
+
+Modular code, minimal coupling, strong validation, and clean logging.
+
+Explicit error states (backend down, invalid workflow, queue limit reached).
+
+No secrets in logs.

@@ -1,0 +1,1354 @@
+{
+  "id": "00000000-0000-0000-0000-000000000000",
+  "revision": 0,
+  "last_node_id": 268,
+  "last_link_id": 66,
+  "nodes": [
+    {
+      "id": 2,
+      "type": "CLIPSetLastLayer",
+      "pos": [
+        513.8785400390625,
+        342
+      ],
+      "size": [
+        270,
+        58
+      ],
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": 34
+        }
+      ],
+      "outputs": [
+        {
+          "name": "CLIP",
+          "type": "CLIP",
+          "links": [
+            35,
+            40,
+            50,
+            66
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.64",
+        "Node name for S&R": "CLIPSetLastLayer"
+      },
+      "widgets_values": [
+        -2
+      ]
+    },
+    {
+      "id": 4,
+      "type": "CLIPTextEncode",
+      "pos": [
+        891.9640502929688,
+        130
+      ],
+      "size": [
+        400,
+        200
+      ],
+      "flags": {},
+      "order": 9,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": 35
+        }
+      ],
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "links": [
+            43,
+            53,
+            59,
+            63
+          ]
+        }
+      ],
+      "title": "CLIP Text Encode (Prompt) Negative :(",
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.64",
+        "Node name for S&R": "CLIPTextEncode"
+      },
+      "widgets_values": [
+        "lazyhand, loli, child, underage, light particles, jpeg artifacts, blurry, red pupils, artist name, artist logo, signature, patreon username, patreon logo, shiny clothes, shiny skin, greyscale"
+      ]
+    },
+    {
+      "id": 6,
+      "type": "EmptyLatentImage",
+      "pos": [
+        100,
+        130
+      ],
+      "size": [
+        270,
+        106
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "LATENT",
+          "type": "LATENT",
+          "links": [
+            60
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.64",
+        "Node name for S&R": "EmptyLatentImage"
+      },
+      "widgets_values": [
+        832,
+        1216,
+        1
+      ]
+    },
+    {
+      "id": 42,
+      "type": "VAEDecode",
+      "pos": [
+        2611.964111328125,
+        130
+      ],
+      "size": [
+        140,
+        46
+      ],
+      "flags": {},
+      "order": 14,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "samples",
+          "type": "LATENT",
+          "link": 36
+        },
+        {
+          "name": "vae",
+          "type": "VAE",
+          "link": 37
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            38
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.64",
+        "Node name for S&R": "VAEDecode"
+      }
+    },
+    {
+      "id": 50,
+      "type": "UltralyticsDetectorProvider",
+      "pos": [
+        100,
+        366
+      ],
+      "size": [
+        270,
+        78
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "BBOX_DETECTOR",
+          "type": "BBOX_DETECTOR",
+          "links": [
+            44
+          ]
+        },
+        {
+          "name": "SEGM_DETECTOR",
+          "type": "SEGM_DETECTOR",
+          "links": null
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfyui-impact-subpack",
+        "ver": "1.3.5",
+        "Node name for S&R": "UltralyticsDetectorProvider"
+      },
+      "widgets_values": [
+        "bbox/face_yolov8m.pt"
+      ]
+    },
+    {
+      "id": 51,
+      "type": "SAMLoader",
+      "pos": [
+        100,
+        574
+      ],
+      "size": [
+        270,
+        82
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "SAM_MODEL",
+          "type": "SAM_MODEL",
+          "links": [
+            45
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfyui-impact-pack",
+        "ver": "8.28.2",
+        "Node name for S&R": "SAMLoader"
+      },
+      "widgets_values": [
+        "sam_vit_b_01ec64.pth",
+        "AUTO"
+      ]
+    },
+    {
+      "id": 52,
+      "type": "FaceDetailer",
+      "pos": [
+        2851.964111328125,
+        130
+      ],
+      "size": [
+        400,
+        960
+      ],
+      "flags": {},
+      "order": 15,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 38
+        },
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 39
+        },
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": 40
+        },
+        {
+          "name": "vae",
+          "type": "VAE",
+          "link": 41
+        },
+        {
+          "name": "positive",
+          "type": "CONDITIONING",
+          "link": 42
+        },
+        {
+          "name": "negative",
+          "type": "CONDITIONING",
+          "link": 43
+        },
+        {
+          "name": "bbox_detector",
+          "type": "BBOX_DETECTOR",
+          "link": 44
+        },
+        {
+          "name": "sam_model_opt",
+          "shape": 7,
+          "type": "SAM_MODEL",
+          "link": 45
+        },
+        {
+          "name": "segm_detector_opt",
+          "shape": 7,
+          "type": "SEGM_DETECTOR",
+          "link": null
+        },
+        {
+          "name": "detailer_hook",
+          "shape": 7,
+          "type": "DETAILER_HOOK",
+          "link": null
+        },
+        {
+          "name": "scheduler_func_opt",
+          "shape": 7,
+          "type": "SCHEDULER_FUNC",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "links": [
+            48
+          ]
+        },
+        {
+          "name": "cropped_refined",
+          "shape": 6,
+          "type": "IMAGE",
+          "links": null
+        },
+        {
+          "name": "cropped_enhanced_alpha",
+          "shape": 6,
+          "type": "IMAGE",
+          "links": null
+        },
+        {
+          "name": "mask",
+          "type": "MASK",
+          "links": null
+        },
+        {
+          "name": "detailer_pipe",
+          "type": "DETAILER_PIPE",
+          "links": null
+        },
+        {
+          "name": "cnet_images",
+          "shape": 6,
+          "type": "IMAGE",
+          "links": null
+        }
+      ],
+      "title": "FaceDetailer - FACES",
+      "properties": {
+        "cnr_id": "comfyui-impact-pack",
+        "ver": "8.28.2",
+        "Node name for S&R": "FaceDetailer"
+      },
+      "widgets_values": [
+        512,
+        true,
+        1248,
+        975004437216126,
+        "randomize",
+        10,
+        5,
+        "dpmpp_2m_sde",
+        "karras",
+        0.5,
+        5,
+        true,
+        false,
+        0.5,
+        15,
+        3,
+        "center-1",
+        0,
+        0.93,
+        0,
+        0.7,
+        "False",
+        10,
+        "",
+        1,
+        true,
+        20,
+        false,
+        false
+      ]
+    },
+    {
+      "id": 101,
+      "type": "DynamicThresholdingSimple",
+      "pos": [
+        513.8785400390625,
+        130
+      ],
+      "size": [
+        278.0855407714844,
+        82
+      ],
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 46
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            57
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "sd-dynamic-thresholding",
+        "ver": "1.0.1",
+        "Node name for S&R": "DynamicThresholdingSimple"
+      },
+      "widgets_values": [
+        25,
+        0.9
+      ]
+    },
+    {
+      "id": 111,
+      "type": "LatentUpscaleBy",
+      "pos": [
+        1816.964111328125,
+        130
+      ],
+      "size": [
+        270,
+        82
+      ],
+      "flags": {},
+      "order": 12,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "samples",
+          "type": "LATENT",
+          "link": 47
+        }
+      ],
+      "outputs": [
+        {
+          "name": "LATENT",
+          "type": "LATENT",
+          "links": [
+            64
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.64",
+        "Node name for S&R": "LatentUpscaleBy"
+      },
+      "widgets_values": [
+        "nearest-exact",
+        1.5
+      ]
+    },
+    {
+      "id": 118,
+      "type": "FaceDetailer",
+      "pos": [
+        3351.964111328125,
+        130
+      ],
+      "size": [
+        400,
+        960
+      ],
+      "flags": {},
+      "order": 16,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 48
+        },
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 49
+        },
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": 50
+        },
+        {
+          "name": "vae",
+          "type": "VAE",
+          "link": 51
+        },
+        {
+          "name": "positive",
+          "type": "CONDITIONING",
+          "link": 52
+        },
+        {
+          "name": "negative",
+          "type": "CONDITIONING",
+          "link": 53
+        },
+        {
+          "name": "bbox_detector",
+          "type": "BBOX_DETECTOR",
+          "link": 54
+        },
+        {
+          "name": "sam_model_opt",
+          "shape": 7,
+          "type": "SAM_MODEL",
+          "link": 55
+        },
+        {
+          "name": "segm_detector_opt",
+          "shape": 7,
+          "type": "SEGM_DETECTOR",
+          "link": null
+        },
+        {
+          "name": "detailer_hook",
+          "shape": 7,
+          "type": "DETAILER_HOOK",
+          "link": null
+        },
+        {
+          "name": "scheduler_func_opt",
+          "shape": 7,
+          "type": "SCHEDULER_FUNC",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "links": [
+            65
+          ]
+        },
+        {
+          "name": "cropped_refined",
+          "shape": 6,
+          "type": "IMAGE",
+          "links": null
+        },
+        {
+          "name": "cropped_enhanced_alpha",
+          "shape": 6,
+          "type": "IMAGE",
+          "links": null
+        },
+        {
+          "name": "mask",
+          "type": "MASK",
+          "links": null
+        },
+        {
+          "name": "detailer_pipe",
+          "type": "DETAILER_PIPE",
+          "links": null
+        },
+        {
+          "name": "cnet_images",
+          "shape": 6,
+          "type": "IMAGE",
+          "links": null
+        }
+      ],
+      "title": "FaceDetailer - HANDS",
+      "properties": {
+        "cnr_id": "comfyui-impact-pack",
+        "ver": "8.28.2",
+        "Node name for S&R": "FaceDetailer"
+      },
+      "widgets_values": [
+        512,
+        true,
+        1248,
+        1018489102702975,
+        "randomize",
+        12,
+        3,
+        "dpmpp_2m_sde",
+        "karras",
+        0.4,
+        5,
+        true,
+        false,
+        0.5,
+        15,
+        3,
+        "center-1",
+        0,
+        0.93,
+        0,
+        0.7,
+        "False",
+        10,
+        "",
+        1,
+        true,
+        20,
+        false,
+        false
+      ]
+    },
+    {
+      "id": 119,
+      "type": "SAMLoader",
+      "pos": [
+        100,
+        786
+      ],
+      "size": [
+        270,
+        82
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "SAM_MODEL",
+          "type": "SAM_MODEL",
+          "links": [
+            55
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfyui-impact-pack",
+        "ver": "8.28.2",
+        "Node name for S&R": "SAMLoader"
+      },
+      "widgets_values": [
+        "sam_vit_b_01ec64.pth",
+        "AUTO"
+      ]
+    },
+    {
+      "id": 120,
+      "type": "UltralyticsDetectorProvider",
+      "pos": [
+        100,
+        998
+      ],
+      "size": [
+        270,
+        78
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "BBOX_DETECTOR",
+          "type": "BBOX_DETECTOR",
+          "links": [
+            54
+          ]
+        },
+        {
+          "name": "SEGM_DETECTOR",
+          "type": "SEGM_DETECTOR",
+          "links": null
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfyui-impact-subpack",
+        "ver": "1.3.5",
+        "Node name for S&R": "UltralyticsDetectorProvider"
+      },
+      "widgets_values": [
+        "bbox/hand_yolov8s.pt"
+      ]
+    },
+    {
+      "id": 152,
+      "type": "Checkpoint Loader Simple Mikey",
+      "pos": [
+        100,
+        1206
+      ],
+      "size": [
+        313.8785095214844,
+        138
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "links": [
+            39,
+            46,
+            49,
+            61
+          ]
+        },
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "links": [
+            34
+          ]
+        },
+        {
+          "name": "vae",
+          "type": "VAE",
+          "links": [
+            37,
+            41,
+            51
+          ]
+        },
+        {
+          "name": "ckpt_name",
+          "type": "STRING",
+          "links": null
+        },
+        {
+          "name": "ckpt_hash",
+          "type": "STRING",
+          "links": null
+        }
+      ],
+      "properties": {
+        "cnr_id": "mikey_nodes",
+        "ver": "1.0.5",
+        "Node name for S&R": "Checkpoint Loader Simple Mikey"
+      },
+      "widgets_values": [
+        "animayhemPaleRider_v30PlainsDrifter.safetensors"
+      ]
+    },
+    {
+      "id": 239,
+      "type": "KSampler (Efficient)",
+      "pos": [
+        1391.964111328125,
+        130
+      ],
+      "size": [
+        325,
+        350
+      ],
+      "flags": {},
+      "order": 11,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 57
+        },
+        {
+          "name": "positive",
+          "type": "CONDITIONING",
+          "link": 58
+        },
+        {
+          "name": "negative",
+          "type": "CONDITIONING",
+          "link": 59
+        },
+        {
+          "name": "latent_image",
+          "type": "LATENT",
+          "link": 60
+        },
+        {
+          "name": "optional_vae",
+          "shape": 7,
+          "type": "VAE",
+          "link": null
+        },
+        {
+          "name": "script",
+          "shape": 7,
+          "type": "SCRIPT",
+          "link": null
+        },
+        {
+          "name": "seed",
+          "type": "INT",
+          "widget": {
+            "name": "seed"
+          },
+          "link": 56
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": null
+        },
+        {
+          "name": "CONDITIONING+",
+          "type": "CONDITIONING",
+          "links": null
+        },
+        {
+          "name": "CONDITIONING-",
+          "type": "CONDITIONING",
+          "links": null
+        },
+        {
+          "name": "LATENT",
+          "type": "LATENT",
+          "links": [
+            47
+          ]
+        },
+        {
+          "name": "VAE",
+          "type": "VAE",
+          "links": null
+        },
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": null
+        }
+      ],
+      "properties": {
+        "cnr_id": "efficiency-nodes-comfyui",
+        "ver": "1.0.8",
+        "Node name for S&R": "KSampler (Efficient)"
+      },
+      "widgets_values": [
+        -1,
+        null,
+        35,
+        4.5,
+        "dpmpp_2m_sde",
+        "karras",
+        1,
+        "auto",
+        "true"
+      ],
+      "color": "#2a363b",
+      "bgcolor": "#3f5159",
+      "shape": 1
+    },
+    {
+      "id": 249,
+      "type": "KSampler (Efficient)",
+      "pos": [
+        2186.964111328125,
+        130
+      ],
+      "size": [
+        325,
+        350
+      ],
+      "flags": {},
+      "order": 13,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 61
+        },
+        {
+          "name": "positive",
+          "type": "CONDITIONING",
+          "link": 62
+        },
+        {
+          "name": "negative",
+          "type": "CONDITIONING",
+          "link": 63
+        },
+        {
+          "name": "latent_image",
+          "type": "LATENT",
+          "link": 64
+        },
+        {
+          "name": "optional_vae",
+          "shape": 7,
+          "type": "VAE",
+          "link": null
+        },
+        {
+          "name": "script",
+          "shape": 7,
+          "type": "SCRIPT",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": null
+        },
+        {
+          "name": "CONDITIONING+",
+          "type": "CONDITIONING",
+          "links": null
+        },
+        {
+          "name": "CONDITIONING-",
+          "type": "CONDITIONING",
+          "links": null
+        },
+        {
+          "name": "LATENT",
+          "type": "LATENT",
+          "links": [
+            36
+          ]
+        },
+        {
+          "name": "VAE",
+          "type": "VAE",
+          "links": null
+        },
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": null
+        }
+      ],
+      "properties": {
+        "cnr_id": "efficiency-nodes-comfyui",
+        "ver": "1.0.8",
+        "Node name for S&R": "KSampler (Efficient)"
+      },
+      "widgets_values": [
+        602905948092914,
+        null,
+        12,
+        5,
+        "dpmpp_2m_sde",
+        "karras",
+        0.5,
+        "auto",
+        "true"
+      ],
+      "color": "#332233",
+      "bgcolor": "#553355",
+      "shape": 1
+    },
+    {
+      "id": 256,
+      "type": "Seed Generator (Image Saver)",
+      "pos": [
+        100,
+        1474
+      ],
+      "size": [
+        292.1060485839844,
+        106
+      ],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "INT",
+          "type": "INT",
+          "links": [
+            56
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfyui-image-saver",
+        "ver": "1.20.0",
+        "Node name for S&R": "Seed Generator (Image Saver)"
+      },
+      "widgets_values": [
+        909648876,
+        "randomize",
+        0
+      ]
+    },
+    {
+      "id": 264,
+      "type": "SaveImage",
+      "pos": [
+        3851.964111328125,
+        130
+      ],
+      "size": [
+        270,
+        58
+      ],
+      "flags": {},
+      "order": 17,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 65
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.64",
+        "Node name for S&R": "SaveImage"
+      },
+      "widgets_values": [
+        "ComfyUI"
+      ]
+    },
+    {
+      "id": 268,
+      "type": "CLIPTextEncode",
+      "pos": [
+        891.9640502929688,
+        460
+      ],
+      "size": [
+        400,
+        200
+      ],
+      "flags": {},
+      "order": 10,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": 66
+        }
+      ],
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "links": [
+            42,
+            52,
+            58,
+            62
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.64",
+        "Node name for S&R": "CLIPTextEncode"
+      },
+      "widgets_values": [
+        "1female, solo, black hair: (lime green highlights 1.5), lime green eyes, perfect eyes, vertical pupils, tomboy haircut, multiple facial piercings, black lipstick, heavy eyeliner, long eyelashes, large breasts, curvy hips, abs, tattoos, punk outfit, face close up, smug expression, (feathered wings: black and green feathers, alternating feathers)"
+      ]
+    }
+  ],
+  "links": [
+    [
+      34,
+      152,
+      1,
+      2,
+      0,
+      "CLIP"
+    ],
+    [
+      35,
+      2,
+      0,
+      4,
+      0,
+      "CLIP"
+    ],
+    [
+      36,
+      249,
+      3,
+      42,
+      0,
+      "LATENT"
+    ],
+    [
+      37,
+      152,
+      2,
+      42,
+      1,
+      "VAE"
+    ],
+    [
+      38,
+      42,
+      0,
+      52,
+      0,
+      "IMAGE"
+    ],
+    [
+      39,
+      152,
+      0,
+      52,
+      1,
+      "MODEL"
+    ],
+    [
+      40,
+      2,
+      0,
+      52,
+      2,
+      "CLIP"
+    ],
+    [
+      41,
+      152,
+      2,
+      52,
+      3,
+      "VAE"
+    ],
+    [
+      42,
+      268,
+      0,
+      52,
+      4,
+      "CONDITIONING"
+    ],
+    [
+      43,
+      4,
+      0,
+      52,
+      5,
+      "CONDITIONING"
+    ],
+    [
+      44,
+      50,
+      0,
+      52,
+      6,
+      "BBOX_DETECTOR"
+    ],
+    [
+      45,
+      51,
+      0,
+      52,
+      7,
+      "SAM_MODEL"
+    ],
+    [
+      46,
+      152,
+      0,
+      101,
+      0,
+      "MODEL"
+    ],
+    [
+      47,
+      239,
+      3,
+      111,
+      0,
+      "LATENT"
+    ],
+    [
+      48,
+      52,
+      0,
+      118,
+      0,
+      "IMAGE"
+    ],
+    [
+      49,
+      152,
+      0,
+      118,
+      1,
+      "MODEL"
+    ],
+    [
+      50,
+      2,
+      0,
+      118,
+      2,
+      "CLIP"
+    ],
+    [
+      51,
+      152,
+      2,
+      118,
+      3,
+      "VAE"
+    ],
+    [
+      52,
+      268,
+      0,
+      118,
+      4,
+      "CONDITIONING"
+    ],
+    [
+      53,
+      4,
+      0,
+      118,
+      5,
+      "CONDITIONING"
+    ],
+    [
+      54,
+      120,
+      0,
+      118,
+      6,
+      "BBOX_DETECTOR"
+    ],
+    [
+      55,
+      119,
+      0,
+      118,
+      7,
+      "SAM_MODEL"
+    ],
+    [
+      56,
+      256,
+      0,
+      239,
+      6,
+      "INT"
+    ],
+    [
+      57,
+      101,
+      0,
+      239,
+      0,
+      "MODEL"
+    ],
+    [
+      58,
+      268,
+      0,
+      239,
+      1,
+      "CONDITIONING"
+    ],
+    [
+      59,
+      4,
+      0,
+      239,
+      2,
+      "CONDITIONING"
+    ],
+    [
+      60,
+      6,
+      0,
+      239,
+      3,
+      "LATENT"
+    ],
+    [
+      61,
+      152,
+      0,
+      249,
+      0,
+      "MODEL"
+    ],
+    [
+      62,
+      268,
+      0,
+      249,
+      1,
+      "CONDITIONING"
+    ],
+    [
+      63,
+      4,
+      0,
+      249,
+      2,
+      "CONDITIONING"
+    ],
+    [
+      64,
+      111,
+      0,
+      249,
+      3,
+      "LATENT"
+    ],
+    [
+      65,
+      118,
+      0,
+      264,
+      0,
+      "IMAGE"
+    ],
+    [
+      66,
+      2,
+      0,
+      268,
+      0,
+      "CLIP"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.3914251301220432,
+      "offset": [
+        2560.3387225626916,
+        1155.725282978067
+      ]
+    },
+    "frontendVersion": "1.27.10"
+  },
+  "version": 0.4
+}

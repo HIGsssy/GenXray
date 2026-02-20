@@ -1,0 +1,20 @@
+[Unit]
+Description=ComfyGen Discord Bot
+After=network.target
+
+[Service]
+Type=simple
+User=comfygen
+WorkingDirectory=/opt/comfygen
+ExecStart=/usr/bin/node dist/index.js
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=comfygen
+
+# Secrets — populate /etc/comfygen.env and restrict permissions (chmod 600)
+EnvironmentFile=/etc/comfygen.env
+
+[Install]
+WantedBy=multi-user.target
