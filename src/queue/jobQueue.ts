@@ -1,4 +1,4 @@
-import type { TextChannel } from "discord.js";
+import type { TextChannel, ButtonBuilder, InteractionWebhook } from "discord.js";
 import { comfyClient } from "../comfy/client.js";
 import { bind } from "../comfy/workflowBinder.js";
 import { getJobOrThrow, setJobRunning, setJobCompleted, setJobFailed } from "../db/jobs.js";
@@ -13,12 +13,16 @@ const _queue: string[] = [];
 let _running = false;
 let _client: import("discord.js").Client | null = null;
 
+/** Ephemeral interaction webhooks keyed by jobId — valid for 15 min after interaction. */
+const _webhooks = new Map<string, InteractionWebhook>();
+
 export function setDiscordClient(client: import("discord.js").Client): void {
   _client = client;
 }
 
-export function enqueue(jobId: string): number {
+export function enqueue(jobId: string, webhook?: InteractionWebhook): number {
   _queue.push(jobId);
+  if (webhook) _webhooks.set(jobId, webhook);
   logger.info({ jobId, queueLength: _queue.length }, "Job enqueued");
   scheduleRun();
   return _queue.length; // position (1-indexed count including this job)
@@ -26,6 +30,23 @@ export function enqueue(jobId: string): number {
 
 export function queueLength(): number {
   return _queue.length;
+}
+
+/** Retrieve and remove the webhook for a job (one-shot). */
+function consumeWebhook(jobId: string): InteractionWebhook | undefined {
+  const wh = _webhooks.get(jobId);
+  _webhooks.delete(jobId);
+  return wh;
+}
+
+/** Fire-and-forget ephemeral status update. Swallows errors (token may be expired). */
+async function editProgress(webhook: InteractionWebhook | undefined, content: string): Promise<void> {
+  if (!webhook) return;
+  try {
+    await webhook.editMessage("@original", { content, embeds: [], components: [] });
+  } catch {
+    // Token expired or message already resolved — silently ignore
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -44,6 +65,9 @@ async function runNext(): Promise<void> {
   const jobId = _queue.shift()!;
   logger.info({ jobId }, "Runner: starting job");
 
+  // Grab webhook now so both success and failure paths can use it
+  const webhook = consumeWebhook(jobId);
+
   try {
     const job = getJobOrThrow(jobId);
 
@@ -52,12 +76,14 @@ async function runNext(): Promise<void> {
     if (!bindResult.ok) {
       await setJobFailed(jobId, `Workflow bind failed: ${bindResult.reason}`);
       await notifyFailure(job.channelId, job.userId, jobId, bindResult.reason);
+      void editProgress(webhook, "❌ Generation failed — see the error posted in the channel.");
       return;
     }
 
     // Submit to ComfyUI
     const { promptId } = await comfyClient.submitPrompt(bindResult.workflow);
     setJobRunning(jobId, promptId);
+    void editProgress(webhook, "🔄 Generating your image… I'll mention you when it's ready.");
 
     // Poll for completion
     const images = await pollUntilDone(promptId, jobId);
@@ -66,9 +92,11 @@ async function runNext(): Promise<void> {
 
     // Post results to Discord
     await postSuccess(job.channelId, job.userId, jobId, images);
+    void editProgress(webhook, "✅ Done — your image has been posted above.");
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     logger.error({ jobId, err: msg }, "Runner: job failed");
+    void editProgress(webhook, "❌ Generation failed — see the error posted in the channel.");
     try {
       const job = getJobOrThrow(jobId);
       setJobFailed(jobId, msg);
@@ -171,17 +199,28 @@ async function postSuccess(
         { name: "Scheduler", value: job.scheduler, inline: true },
         { name: "Steps", value: String(job.steps), inline: true },
         { name: "CFG", value: String(job.cfg), inline: true },
-        { name: "Prompt", value: truncPrompt },
-      );
+      )
+      .setFooter({ text: "Prompt hidden — requester can click Share Prompt to reveal" });
 
     if (attachments.length > 0) {
       embed.setImage(`attachment://${attachments[0].name}`);
     }
 
+    const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = await import("discord.js");
+    const { CUSTOM_ID } = await import("../bot/components/formEmbed.js");
+
+    const shareButton = new ButtonBuilder()
+      .setCustomId(`${CUSTOM_ID.SHARE_PROMPT_PREFIX}:${jobId}`)
+      .setLabel("Share Prompt")
+      .setStyle(ButtonStyle.Secondary);
+
+    const shareRow = new ActionRowBuilder<ButtonBuilder>().addComponents(shareButton);
+
     await channel.send({
       content: `<@${userId}>`,
       embeds: [embed],
       files: attachments,
+      components: [shareRow],
     });
   } catch (err) {
     logger.error({ jobId, err }, "Failed to post completion to Discord");

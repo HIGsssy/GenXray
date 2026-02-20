@@ -147,14 +147,17 @@ export async function onInteractionCreate(interaction: Interaction): Promise<voi
       const jobId = uuidv4();
       insertJob(jobId, params);
       const position = countQueuedBefore(jobId) + 1;
-      enqueue(jobId);
-      deleteDraft(userId);
 
-      await interaction.update({
-        content: `✅ Queued! You are position **${position}** in the queue. I'll post your result in this channel.`,
-        embeds: [],
-        components: [],
-      });
+      // Acknowledge the button click first, then hand the webhook to the runner
+      // so it can edit this same ephemeral as the job progresses.
+      const queuedMsg =
+        position === 1
+          ? "⏳ Queued — you're next! I'll update this message as your job runs."
+          : `⏳ Queued — position **${position}** in the queue. I'll update this message as your job runs.`;
+
+      await interaction.update({ content: queuedMsg, embeds: [], components: [] });
+      enqueue(jobId, interaction.webhook);
+      deleteDraft(userId);
 
       logger.info({ jobId, userId, position }, "Job submitted by user");
       return;
@@ -162,7 +165,64 @@ export async function onInteractionCreate(interaction: Interaction): Promise<voi
   }
 
   // ---------------------------------------------------------------------------
-  // 4. Modal submit
+  // 4. Share Prompt button on output posts
+  // ---------------------------------------------------------------------------
+  if (
+    interaction.isButton() &&
+    interaction.customId.startsWith(CUSTOM_ID.SHARE_PROMPT_PREFIX + ":")
+  ) {
+    const jobId = interaction.customId.slice(CUSTOM_ID.SHARE_PROMPT_PREFIX.length + 1);
+
+    let job;
+    try {
+      const { getJobOrThrow } = await import("../../db/jobs.js");
+      job = getJobOrThrow(jobId);
+    } catch {
+      await interaction.reply({ content: "Could not find the job for this image.", ephemeral: true });
+      return;
+    }
+
+    // Only the original requester may reveal the prompt
+    if (interaction.user.id !== job.userId) {
+      await interaction.reply({
+        content: `Only <@${job.userId}> can share the prompt for this generation.`,
+        ephemeral: true,
+      });
+      return;
+    }
+
+    const { EmbedBuilder } = await import("discord.js");
+    const truncPos =
+      job.positivePrompt.length > 1000
+        ? job.positivePrompt.slice(0, 997) + "…"
+        : job.positivePrompt;
+
+    const revealedEmbed = new EmbedBuilder()
+      .setTitle("Image generated")
+      .setColor(0x5865f2)
+      .addFields(
+        { name: "Model", value: job.model, inline: true },
+        { name: "Sampler", value: job.sampler, inline: true },
+        { name: "Scheduler", value: job.scheduler, inline: true },
+        { name: "Steps", value: String(job.steps), inline: true },
+        { name: "CFG", value: String(job.cfg), inline: true },
+        { name: "Positive Prompt", value: truncPos },
+        ...(job.negativePrompt
+          ? [{ name: "Negative Prompt", value: job.negativePrompt.slice(0, 500) }]
+          : []),
+      );
+
+    // Preserve the image attachment reference from the original embed
+    const existingImage = interaction.message.embeds[0]?.image?.url;
+    if (existingImage) revealedEmbed.setImage(existingImage);
+
+    // Edit the post in-place; remove the button
+    await interaction.update({ embeds: [revealedEmbed], components: [] });
+    return;
+  }
+
+  // ---------------------------------------------------------------------------
+  // 5. Modal submit
   // ---------------------------------------------------------------------------
   if (interaction.isModalSubmit() && interaction.customId === CUSTOM_ID.MODAL_PROMPTS) {
     const userId = interaction.user.id;

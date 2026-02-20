@@ -22,6 +22,8 @@ export const CUSTOM_ID = {
   MODAL_FIELD_NEG: "gen_field_negative",
   MODAL_FIELD_STEPS: "gen_field_steps",
   MODAL_FIELD_CFG: "gen_field_cfg",
+  // Prefix for share-prompt buttons on output posts — full customId: `${prefix}:${jobId}`
+  SHARE_PROMPT_PREFIX: "gen_share_prompt",
 } as const;
 
 // ---------------------------------------------------------------------------
