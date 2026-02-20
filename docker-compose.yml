@@ -1,0 +1,16 @@
+services:
+  comfygen:
+    build: .
+    image: comfygen:latest
+    restart: unless-stopped
+
+    # All secrets and config come from the .env file on the host.
+    # Copy .env.example → .env and fill in your values before starting.
+    env_file: .env
+
+    volumes:
+      # Named volume keeps the SQLite database across restarts and upgrades
+      - comfygen-data:/app/data
+
+volumes:
+  comfygen-data:
