@@ -7,6 +7,7 @@ import {
 } from "discord.js";
 import type { ComfyOptions } from "../../comfy/objectInfo.js";
 import type { JobRow } from "../../queue/types.js";
+import { config } from "../../config.js";
 
 // ---------------------------------------------------------------------------
 // Custom ID constants
@@ -65,7 +66,7 @@ export function initDraft(userId: string, options: ComfyOptions): DraftParams {
     cfg: 5,
     seed: randomSeed(),
     positivePrompt: "",
-    negativePrompt: "",
+    negativePrompt: config.defaultNegativePrompt,
   };
   _drafts.set(userId, draft);
   return draft;

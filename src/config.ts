@@ -36,6 +36,7 @@ const ConfigSchema = z.object({
   QUEUE_CONCURRENCY: z.coerce.number().int().min(1).max(1).default(1),
   DB_PATH: z.string().default("./data/comfygen.db"),
   LOG_LEVEL: z.enum(["trace", "debug", "info", "warn", "error", "fatal"]).default("info"),
+  DEFAULT_NEGATIVE_PROMPT: z.string().default(""),
 });
 
 const parsed = ConfigSchema.safeParse(process.env);
@@ -66,4 +67,5 @@ export const config = {
     path: env.DB_PATH,
   },
   logLevel: env.LOG_LEVEL,
+  defaultNegativePrompt: env.DEFAULT_NEGATIVE_PROMPT,
 } as const;
