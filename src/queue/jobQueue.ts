@@ -215,7 +215,12 @@ async function postSuccess(
       .setLabel("Share Prompt")
       .setStyle(ButtonStyle.Secondary);
 
-    const shareRow = new ActionRowBuilder<ButtonBuilder>().addComponents(shareButton);
+    const rerollButton = new ButtonBuilder()
+      .setCustomId(`${CUSTOM_ID.REROLL_PREFIX}:${jobId}`)
+      .setLabel("🎲 Re-roll")
+      .setStyle(ButtonStyle.Primary);
+
+    const shareRow = new ActionRowBuilder<ButtonBuilder>().addComponents(shareButton, rerollButton);
 
     await channel.send({
       content: `<@${userId}>`,

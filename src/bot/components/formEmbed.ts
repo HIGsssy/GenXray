@@ -25,6 +25,8 @@ export const CUSTOM_ID = {
   MODAL_FIELD_SEED: "gen_field_seed",
   // Prefix for share-prompt buttons on output posts — full customId: `${prefix}:${jobId}`
   SHARE_PROMPT_PREFIX: "gen_share_prompt",
+  // Prefix for re-roll buttons on output posts — full customId: `${prefix}:${jobId}`
+  REROLL_PREFIX: "gen_reroll",
 } as const;
 
 // ---------------------------------------------------------------------------

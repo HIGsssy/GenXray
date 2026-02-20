@@ -1,4 +1,4 @@
-import type { Interaction } from "discord.js";
+import type { Interaction, ButtonBuilder } from "discord.js";
 import { v4 as uuidv4 } from "uuid";
 import { execute as genExecute } from "../commands/gen.js";
 import {
@@ -10,10 +10,10 @@ import {
   mergeDraft,
   deleteDraft,
 } from "../components/formEmbed.js";
-import { buildPromptModal, ModalSchema, resolveSeed } from "../components/promptModal.js";
+import { buildPromptModal, ModalSchema, resolveSeed, randomSeed } from "../components/promptModal.js";
 import { fetchOptions } from "../../comfy/objectInfo.js";
 import { validate as validateWorkflow, bind } from "../../comfy/workflowBinder.js";
-import { insertJob, countQueuedBefore } from "../../db/jobs.js";
+import { insertJob, countQueuedBefore, getJobOrThrow } from "../../db/jobs.js";
 import { enqueue } from "../../queue/jobQueue.js";
 import { logger } from "../../logger.js";
 import type { JobParams } from "../../queue/types.js";
@@ -217,13 +217,75 @@ export async function onInteractionCreate(interaction: Interaction): Promise<voi
     const existingImage = interaction.message.embeds[0]?.image?.url;
     if (existingImage) revealedEmbed.setImage(existingImage);
 
-    // Edit the post in-place; remove the button
-    await interaction.update({ embeds: [revealedEmbed], components: [] });
+    // Rebuild Re-roll button so it survives the prompt reveal
+    const { ActionRowBuilder, ButtonBuilder: BtnBuilder, ButtonStyle } = await import("discord.js");
+    const rerollBtn = new BtnBuilder()
+      .setCustomId(`${CUSTOM_ID.REROLL_PREFIX}:${jobId}`)
+      .setLabel("🎲 Re-roll")
+      .setStyle(ButtonStyle.Primary);
+    const rerollRow = new ActionRowBuilder<ButtonBuilder>().addComponents(rerollBtn);
+
+    // Edit the post in-place; remove Share Prompt, keep Re-roll
+    await interaction.update({ embeds: [revealedEmbed], components: [rerollRow] });
     return;
   }
 
   // ---------------------------------------------------------------------------
-  // 5. Modal submit
+  // 5. Re-roll button on output posts
+  // ---------------------------------------------------------------------------
+  if (
+    interaction.isButton() &&
+    interaction.customId.startsWith(CUSTOM_ID.REROLL_PREFIX + ":")
+  ) {
+    const jobId = interaction.customId.slice(CUSTOM_ID.REROLL_PREFIX.length + 1);
+
+    let originalJob;
+    try {
+      originalJob = getJobOrThrow(jobId);
+    } catch {
+      await interaction.reply({ content: "Could not find the original job.", ephemeral: true });
+      return;
+    }
+
+    // Only the original requester may re-roll
+    if (interaction.user.id !== originalJob.userId) {
+      await interaction.reply({
+        content: `Only <@${originalJob.userId}> can re-roll this generation.`,
+        ephemeral: true,
+      });
+      return;
+    }
+
+    const newJobId = uuidv4();
+    const params: JobParams = {
+      userId: originalJob.userId,
+      guildId: originalJob.guildId,
+      channelId: originalJob.channelId,
+      model: originalJob.model,
+      sampler: originalJob.sampler,
+      scheduler: originalJob.scheduler,
+      steps: originalJob.steps,
+      cfg: originalJob.cfg,
+      seed: randomSeed(),
+      positivePrompt: originalJob.positivePrompt,
+      negativePrompt: originalJob.negativePrompt,
+    };
+
+    insertJob(newJobId, params);
+    const position = countQueuedBefore(newJobId) + 1;
+    const queuedMsg =
+      position === 1
+        ? "⏳ Queued — you're next! I'll update this message as your job runs."
+        : `⏳ Queued — position **${position}** in the queue. I'll update this message as your job runs.`;
+
+    await interaction.reply({ content: queuedMsg, ephemeral: true });
+    enqueue(newJobId, interaction.webhook);
+    logger.info({ newJobId, originalJobId: jobId, userId: originalJob.userId }, "Re-roll submitted");
+    return;
+  }
+
+  // ---------------------------------------------------------------------------
+  // 6. Modal submit
   // ---------------------------------------------------------------------------
   if (interaction.isModalSubmit() && interaction.customId === CUSTOM_ID.MODAL_PROMPTS) {
     const userId = interaction.user.id;
