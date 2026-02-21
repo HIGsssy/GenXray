@@ -2,6 +2,8 @@
 // Core domain types shared across queue, DB, and binder modules
 // ---------------------------------------------------------------------------
 
+export type ImageSize = "portrait" | "square" | "landscape";
+
 export interface JobParams {
   userId: string;
   guildId: string;
@@ -12,6 +14,7 @@ export interface JobParams {
   steps: number; // 1–150
   cfg: number;   // 1.0–30.0
   seed: number;  // 0–4294967295
+  size: ImageSize;
   positivePrompt: string;
   negativePrompt: string;
 }

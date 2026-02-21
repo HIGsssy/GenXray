@@ -1,5 +1,5 @@
 import { getDb } from "./database.js";
-import type { JobRow, JobParams, JobStatus } from "../queue/types.js";
+import type { JobRow, JobParams, JobStatus, ImageSize } from "../queue/types.js";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -19,6 +19,7 @@ function rowToJob(row: Record<string, unknown>): JobRow {
     steps: row.steps as number,
     cfg: row.cfg as number,
     seed: (row.seed as number) ?? 0,
+    size: ((row.size as string) ?? "portrait") as ImageSize,
     positivePrompt: row.positive_prompt as string,
     negativePrompt: row.negative_prompt as string,
     comfyPromptId: (row.comfy_prompt_id as string | null) ?? null,
@@ -40,11 +41,11 @@ export function insertJob(id: string, params: JobParams): JobRow {
   db.prepare(`
     INSERT INTO jobs (
       id, discord_user_id, discord_guild_id, discord_channel_id,
-      status, model, sampler, scheduler, steps, cfg, seed,
+      status, model, sampler, scheduler, steps, cfg, seed, size,
       positive_prompt, negative_prompt, created_at
     ) VALUES (
       ?, ?, ?, ?,
-      'queued', ?, ?, ?, ?, ?, ?,
+      'queued', ?, ?, ?, ?, ?, ?, ?,
       ?, ?, ?
     )
   `).run(
@@ -58,6 +59,7 @@ export function insertJob(id: string, params: JobParams): JobRow {
     params.steps,
     params.cfg,
     params.seed,
+    params.size,
     params.positivePrompt,
     params.negativePrompt,
     now,

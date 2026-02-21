@@ -27,6 +27,7 @@ export type BindResult = BindOk | BindError;
 //
 //  Node  | Field(s) written
 //  ------|---------------------------------------------------------
+//  "6"   | inputs.width, inputs.height               (latent size)
 //  "152" | inputs.ckpt_name                  (checkpoint model)
 //  "268" | inputs.text                       (positive prompt)
 //  "4"   | inputs.text                       (negative prompt)
@@ -39,10 +40,11 @@ export type BindResult = BindOk | BindError;
 //  steps / cfg are written ONLY to node "239".
 // ---------------------------------------------------------------------------
 
-const REQUIRED_NODES = ["152", "256", "268", "4", "239", "249", "52", "118"] as const;
+const REQUIRED_NODES = ["6", "152", "256", "268", "4", "239", "249", "52", "118"] as const;
 
 /** Fields each node must have. Used by validate(). */
 const REQUIRED_FIELDS: Record<string, string[]> = {
+  "6": ["width", "height"],
   "152": ["ckpt_name"],
   "256": ["seed"],
   "268": ["text"],
@@ -76,6 +78,16 @@ function setField(workflow: Record<string, unknown>, nodeId: string, field: stri
   if (!inp) return;
   inp[field] = value;
 }
+
+// ---------------------------------------------------------------------------
+// Size map
+// ---------------------------------------------------------------------------
+
+const SIZE_MAP: Record<string, [number, number]> = {
+  portrait:  [832, 1216],
+  square:    [1024, 1024],
+  landscape: [1216, 832],
+};
 
 // ---------------------------------------------------------------------------
 // Load base workflow from disk
@@ -145,6 +157,11 @@ export function bind(job: JobRow): BindResult {
 
   // Deep clone so each job gets its own copy
   const wf: Record<string, unknown> = JSON.parse(JSON.stringify(base));
+
+  // Node "6" — latent image size
+  const [w, h] = SIZE_MAP[job.size] ?? SIZE_MAP["portrait"];
+  setField(wf, "6", "width", w);
+  setField(wf, "6", "height", h);
 
   // Node "152" — checkpoint model
   setField(wf, "152", "ckpt_name", job.model);

@@ -1,0 +1,1 @@
+ALTER TABLE jobs ADD COLUMN size TEXT NOT NULL DEFAULT 'portrait';

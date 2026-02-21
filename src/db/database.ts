@@ -38,6 +38,14 @@ function runMigrations(db: Database.Database): void {
     logger.info("Migration 002: seed column added");
   }
 
+  // 003 — add size column
+  const cols003 = db.prepare("PRAGMA table_info(jobs)").all() as { name: string }[];
+  if (!cols003.some((c) => c.name === "size")) {
+    const sql003 = readFileSync(`${migrationDir}/003_add_size.sql`, "utf-8");
+    db.exec(sql003);
+    logger.info("Migration 003: size column added");
+  }
+
   logger.debug("Database migrations applied");
 }
 

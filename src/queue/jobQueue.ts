@@ -203,6 +203,7 @@ async function postSuccess(
         { name: "Steps", value: String(job.steps), inline: true },
         { name: "CFG", value: String(job.cfg), inline: true },
         { name: "Seed", value: String(job.seed), inline: true },
+        { name: "Size", value: job.size, inline: true },
       )
       .setFooter({ text: "Prompt hidden — requester can click Share Prompt to reveal" });
 

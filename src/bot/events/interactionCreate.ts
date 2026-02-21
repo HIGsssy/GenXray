@@ -18,7 +18,7 @@ import { validate as validateWorkflow, bind } from "../../comfy/workflowBinder.j
 import { insertJob, countQueuedBefore, getJobOrThrow } from "../../db/jobs.js";
 import { enqueue } from "../../queue/jobQueue.js";
 import { logger } from "../../logger.js";
-import type { JobParams } from "../../queue/types.js";
+import type { JobParams, ImageSize } from "../../queue/types.js";
 
 export async function onInteractionCreate(interaction: Interaction): Promise<void> {
   // ---------------------------------------------------------------------------
@@ -46,6 +46,8 @@ export async function onInteractionCreate(interaction: Interaction): Promise<voi
       mergeDraft(userId, { sampler: interaction.values[0] });
     } else if (interaction.customId === CUSTOM_ID.SELECT_SCHEDULER) {
       mergeDraft(userId, { scheduler: interaction.values[0] });
+    } else if (interaction.customId === CUSTOM_ID.SELECT_SIZE) {
+      mergeDraft(userId, { size: interaction.values[0] as ImageSize });
     } else {
       return; // not ours
     }
@@ -120,6 +122,7 @@ export async function onInteractionCreate(interaction: Interaction): Promise<voi
         steps: draft.steps,
         cfg: draft.cfg,
         seed: draft.seed,
+        size: draft.size,
         positivePrompt: draft.positivePrompt,
         negativePrompt: draft.negativePrompt,
       };
@@ -277,6 +280,7 @@ export async function onInteractionCreate(interaction: Interaction): Promise<voi
       steps: originalJob.steps,
       cfg: originalJob.cfg,
       seed: randomSeed(),
+      size: originalJob.size,
       positivePrompt: originalJob.positivePrompt,
       negativePrompt: originalJob.negativePrompt,
     };

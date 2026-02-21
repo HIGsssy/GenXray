@@ -6,7 +6,7 @@ import {
   StringSelectMenuBuilder,
 } from "discord.js";
 import type { ComfyOptions } from "../../comfy/objectInfo.js";
-import type { JobRow } from "../../queue/types.js";
+import type { JobRow, ImageSize } from "../../queue/types.js";
 import { config } from "../../config.js";
 
 // ---------------------------------------------------------------------------
@@ -33,6 +33,8 @@ export const CUSTOM_ID = {
   DELETE_PREFIX: "gen_delete",
   // Prefix for edit buttons on output posts — full customId: `${prefix}:${jobId}`
   EDIT_PREFIX: "gen_edit",
+  // Size selector on the gen form
+  SELECT_SIZE: "gen_select_size",
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -46,6 +48,7 @@ export interface DraftParams {
   steps: number;
   cfg: number;
   seed: number;
+  size: ImageSize;
   positivePrompt: string;
   negativePrompt: string;
 }
@@ -65,6 +68,7 @@ export function initDraft(userId: string, options: ComfyOptions): DraftParams {
     steps: 28,
     cfg: 5,
     seed: randomSeed(),
+    size: "portrait",
     positivePrompt: "",
     negativePrompt: config.defaultNegativePrompt,
   };
@@ -81,6 +85,7 @@ export function initDraftFromJob(userId: string, job: JobRow): DraftParams {
     steps: job.steps,
     cfg: job.cfg,
     seed: job.seed,
+    size: job.size,
     positivePrompt: job.positivePrompt,
     negativePrompt: job.negativePrompt,
   };
@@ -120,6 +125,7 @@ export function buildFormEmbed(draft: DraftParams): EmbedBuilder {
       { name: "Steps", value: String(draft.steps), inline: true },
       { name: "CFG", value: String(draft.cfg), inline: true },
       { name: "Seed", value: String(draft.seed), inline: true },
+      { name: "Size", value: draft.size, inline: true },
       {
         name: "Positive Prompt",
         value: draft.positivePrompt.length > 0 ? `\`\`\`${draft.positivePrompt.slice(0, 500)}\`\`\`` : "_not set_",
@@ -158,10 +164,21 @@ export function buildSelectRows(
   options: ComfyOptions,
   draft: DraftParams,
 ): ActionRowBuilder<StringSelectMenuBuilder>[] {
+  const sizeOptions = [
+    { label: "Portrait (832×1216)", value: "portrait" },
+    { label: "Square (1024×1024)", value: "square" },
+    { label: "Landscape (1216×832)", value: "landscape" },
+  ];
+  const sizeMenu = new StringSelectMenuBuilder()
+    .setCustomId(CUSTOM_ID.SELECT_SIZE)
+    .setPlaceholder("Select size…")
+    .addOptions(sizeOptions.map((o) => ({ ...o, default: o.value === draft.size })));
+
   return [
     makeSelect(CUSTOM_ID.SELECT_MODEL, "Select model…", options.models, draft.model),
     makeSelect(CUSTOM_ID.SELECT_SAMPLER, "Select sampler…", options.samplers, draft.sampler),
     makeSelect(CUSTOM_ID.SELECT_SCHEDULER, "Select scheduler…", options.schedulers, draft.scheduler),
+    new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(sizeMenu),
   ];
 }
 
