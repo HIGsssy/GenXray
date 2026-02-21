@@ -16,7 +16,10 @@ import { buildPromptModal, ModalSchema, resolveSeed, randomSeed } from "../compo
 import { fetchOptions } from "../../comfy/objectInfo.js";
 import { validate as validateWorkflow, bind } from "../../comfy/workflowBinder.js";
 import { insertJob, countQueuedBefore, getJobOrThrow } from "../../db/jobs.js";
-import { enqueue } from "../../queue/jobQueue.js";
+import { insertUpscaleJob, countUpscaleQueuedBefore } from "../../db/upscaleJobs.js";
+import { enqueue, enqueueUpscale } from "../../queue/jobQueue.js";
+import { comfyClient } from "../../comfy/client.js";
+import { config } from "../../config.js";
 import { logger } from "../../logger.js";
 import type { JobParams, ImageSize } from "../../queue/types.js";
 
@@ -232,11 +235,15 @@ export async function onInteractionCreate(interaction: Interaction): Promise<voi
       .setCustomId(`${CUSTOM_ID.EDIT_PREFIX}:${jobId}`)
       .setLabel("✏️ Edit")
       .setStyle(ButtonStyle.Secondary);
+    const upscaleBtn = new BtnBuilder()
+      .setCustomId(`${CUSTOM_ID.UPSCALE_PREFIX}:${jobId}`)
+      .setLabel("⬆️ Upscale")
+      .setStyle(ButtonStyle.Success);
     const deleteBtn = new BtnBuilder()
       .setCustomId(`${CUSTOM_ID.DELETE_PREFIX}:${jobId}`)
       .setLabel("🗑️ Delete")
       .setStyle(ButtonStyle.Danger);
-    const survivingRow = new ActionRowBuilder<ButtonBuilder>().addComponents(rerollBtn, editBtn, deleteBtn);
+    const survivingRow = new ActionRowBuilder<ButtonBuilder>().addComponents(rerollBtn, editBtn, upscaleBtn, deleteBtn);
 
     // Edit the post in-place; remove Share Prompt, keep Re-roll + Edit + Delete
     await interaction.update({ embeds: [revealedEmbed], components: [survivingRow] });
@@ -366,7 +373,102 @@ export async function onInteractionCreate(interaction: Interaction): Promise<voi
   }
 
   // ---------------------------------------------------------------------------
-  // 8. Modal submit
+  // 8. Upscale button on output posts
+  // ---------------------------------------------------------------------------
+  if (
+    interaction.isButton() &&
+    interaction.customId.startsWith(CUSTOM_ID.UPSCALE_PREFIX + ":")
+  ) {
+    const jobId = interaction.customId.slice(CUSTOM_ID.UPSCALE_PREFIX.length + 1);
+
+    let job;
+    try {
+      job = getJobOrThrow(jobId);
+    } catch {
+      await interaction.reply({ content: "Could not find the job for this image.", ephemeral: true });
+      return;
+    }
+
+    if (interaction.user.id !== job.userId) {
+      await interaction.reply({
+        content: `Only <@${job.userId}> can upscale this image.`,
+        ephemeral: true,
+      });
+      return;
+    }
+
+    if (job.status !== "completed" || !job.outputImages || job.outputImages.length === 0) {
+      await interaction.reply({
+        content: "This image is not available for upscaling yet.",
+        ephemeral: true,
+      });
+      return;
+    }
+
+    // Defer — the image fetch + upload may take a few seconds
+    await interaction.deferReply({ ephemeral: true });
+
+    try {
+      // Fetch the finished image from ComfyUI output folder
+      const sourceFilename = job.outputImages[0];
+      const history = await comfyClient.getHistory(job.comfyPromptId!);
+      let subfolder = "";
+      let imgType = "output";
+      if (history) {
+        for (const out of Object.values(history.outputs)) {
+          const img = (out.images ?? []).find((i) => i.filename === sourceFilename);
+          if (img) {
+            subfolder = img.subfolder;
+            imgType = img.type;
+            break;
+          }
+        }
+      }
+
+      const imageBuffer = await comfyClient.getImage(sourceFilename, subfolder, imgType);
+
+      // Upload to ComfyUI /upload/image so the workflow's image loader can read it
+      const { name: uploadedFilename } = await comfyClient.uploadImage(imageBuffer, sourceFilename);
+
+      // Create the upscale job in the DB
+      if (!interaction.guildId) {
+        await interaction.editReply({ content: "This command can only be used in a server." });
+        return;
+      }
+
+      const upscaleJobId = uuidv4();
+      insertUpscaleJob(upscaleJobId, {
+        userId: job.userId,
+        guildId: interaction.guildId,
+        channelId: job.channelId,
+        sourceJobId: job.id,
+        sourceImageFilename: uploadedFilename,
+        model: job.model,
+        positivePrompt: job.positivePrompt,
+        negativePrompt: job.negativePrompt,
+        upscaleModel: config.upscale.model,
+      });
+
+      const position = countUpscaleQueuedBefore(upscaleJobId) + 1;
+      const queuedMsg =
+        position === 1
+          ? `⏳ Queued for upscaling (${config.upscale.workflow} mode) — you're next! I'll update this message as it runs.`
+          : `⏳ Queued for upscaling (${config.upscale.workflow} mode) — position **${position}** in the queue.`;
+
+      await interaction.editReply({ content: queuedMsg });
+      enqueueUpscale(upscaleJobId, interaction.webhook);
+
+      logger.info({ upscaleJobId, sourceJobId: jobId, userId: job.userId }, "Upscale job submitted");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      logger.error({ jobId, err: msg }, "Failed to initiate upscale");
+      await interaction.editReply({ content: `❌ Failed to start upscale: ${msg}` });
+    }
+    return;
+  }
+
+  // ---------------------------------------------------------------------------
+  // 9. Modal submit
   // ---------------------------------------------------------------------------
   if (interaction.isModalSubmit() && interaction.customId === CUSTOM_ID.MODAL_PROMPTS) {
     const userId = interaction.user.id;

@@ -33,6 +33,8 @@ export const CUSTOM_ID = {
   DELETE_PREFIX: "gen_delete",
   // Prefix for edit buttons on output posts — full customId: `${prefix}:${jobId}`
   EDIT_PREFIX: "gen_edit",
+  // Prefix for upscale buttons on output posts — full customId: `${prefix}:${jobId}`
+  UPSCALE_PREFIX: "gen_upscale",
   // Size selector on the gen form
   SELECT_SIZE: "gen_select_size",
 } as const;

@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS upscale_jobs (
+  id                    TEXT    PRIMARY KEY,
+  source_job_id         TEXT    NOT NULL REFERENCES jobs(id),
+  source_image_filename TEXT    NOT NULL,
+  user_id               TEXT    NOT NULL,
+  guild_id              TEXT    NOT NULL,
+  channel_id            TEXT    NOT NULL,
+  discord_message_id    TEXT,
+  status                TEXT    NOT NULL DEFAULT 'queued',
+  model                 TEXT    NOT NULL DEFAULT '',
+  positive_prompt       TEXT    NOT NULL DEFAULT '',
+  negative_prompt       TEXT    NOT NULL DEFAULT '',
+  upscale_model         TEXT    NOT NULL DEFAULT '',
+  comfy_prompt_id       TEXT,
+  output_images         TEXT,
+  error_message         TEXT,
+  created_at            INTEGER NOT NULL,
+  started_at            INTEGER,
+  completed_at          INTEGER
+);

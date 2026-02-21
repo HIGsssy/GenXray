@@ -1,4 +1,5 @@
-import { request } from "undici";
+import { request, FormData } from "undici";
+import { Blob } from "node:buffer";
 import { config } from "../config.js";
 import { logger } from "../logger.js";
 
@@ -16,6 +17,7 @@ export interface ComfyClient {
   submitPrompt(workflow: Record<string, unknown>): Promise<{ promptId: string }>;
   getHistory(promptId: string): Promise<ComfyHistoryEntry | null>;
   getImage(filename: string, subfolder: string, type: string): Promise<Buffer>;
+  uploadImage(buffer: Buffer, filename: string): Promise<{ name: string; subfolder: string; type: string }>;
 }
 
 function base(): string {
@@ -82,5 +84,23 @@ export const comfyClient: ComfyClient = {
     }
     const bytes = await body.arrayBuffer();
     return Buffer.from(bytes);
+  },
+
+  async uploadImage(buffer: Buffer, filename: string): Promise<{ name: string; subfolder: string; type: string }> {
+    const formData = new FormData();
+    formData.append("image", new Blob([new Uint8Array(buffer)], { type: "image/png" }), filename);
+    formData.append("overwrite", "true");
+
+    const { statusCode, body: resBody } = await request(`${base()}/upload/image`, {
+      method: "POST",
+      body: formData,
+    });
+    if (statusCode < 200 || statusCode >= 300) {
+      const text = await resBody.text();
+      throw new Error(`ComfyUI POST /upload/image returned HTTP ${statusCode}: ${text}`);
+    }
+    const json = (await resBody.json()) as { name: string; subfolder: string; type: string };
+    logger.debug({ name: json.name }, "Image uploaded to ComfyUI input folder");
+    return { name: json.name, subfolder: json.subfolder, type: json.type };
   },
 };

@@ -1,0 +1,201 @@
+{
+  "123": {
+    "inputs": {
+      "text": [
+        "146",
+        1
+      ],
+      "clip": [
+        "125",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP Text Encode (Prompt)"
+    }
+  },
+  "124": {
+    "inputs": {
+      "text": [
+        "146",
+        2
+      ],
+      "clip": [
+        "125",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP Text Encode (Prompt)"
+    }
+  },
+  "125": {
+    "inputs": {
+      "ckpt_name": "AniMayhemv2TrueGrit_00001_.safetensors"
+    },
+    "class_type": "CheckpointLoaderSimple",
+    "_meta": {
+      "title": "Load Checkpoint"
+    }
+  },
+  "126": {
+    "inputs": {
+      "model_name": "RealESRGAN_x4plus_anime_6B.pth"
+    },
+    "class_type": "UpscaleModelLoader",
+    "_meta": {
+      "title": "Load Upscale Model"
+    }
+  },
+  "129": {
+    "inputs": {
+      "image": [
+        "146",
+        0
+      ]
+    },
+    "class_type": "GetImageSize+",
+    "_meta": {
+      "title": "🔧 Get Image Size"
+    }
+  },
+  "134": {
+    "inputs": {
+      "upscale_by": 2,
+      "seed": [
+        "146",
+        4
+      ],
+      "steps": 12,
+      "cfg": 7,
+      "sampler_name": "euler",
+      "scheduler": "normal",
+      "denoise": 0.6,
+      "mode_type": "Linear",
+      "tile_width": [
+        "129",
+        0
+      ],
+      "tile_height": [
+        "129",
+        1
+      ],
+      "mask_blur": 20,
+      "tile_padding": 56,
+      "seam_fix_mode": "Half Tile",
+      "seam_fix_denoise": 0.3,
+      "seam_fix_width": 64,
+      "seam_fix_mask_blur": 16,
+      "seam_fix_padding": 32,
+      "force_uniform_tiles": true,
+      "tiled_decode": false,
+      "batch_size": 1,
+      "image": [
+        "146",
+        0
+      ],
+      "model": [
+        "125",
+        0
+      ],
+      "positive": [
+        "123",
+        0
+      ],
+      "negative": [
+        "124",
+        0
+      ],
+      "vae": [
+        "125",
+        2
+      ],
+      "upscale_model": [
+        "126",
+        0
+      ]
+    },
+    "class_type": "UltimateSDUpscaleCustomSample",
+    "_meta": {
+      "title": "Ultimate SD Upscale (Custom Sample)"
+    }
+  },
+  "145": {
+    "inputs": {
+      "modelname": "",
+      "positive": [
+        "146",
+        1
+      ],
+      "negative": [
+        "146",
+        2
+      ],
+      "width": 512,
+      "height": 512,
+      "seed_value": [
+        "146",
+        3
+      ],
+      "steps": [
+        "146",
+        4
+      ],
+      "cfg": [
+        "146",
+        5
+      ],
+      "sampler_name": "",
+      "scheduler_name": "normal",
+      "denoise": 1,
+      "clip_skip": 0,
+      "additional_hashes": "",
+      "download_civitai_data": true,
+      "easy_remix": true,
+      "custom": ""
+    },
+    "class_type": "Image Saver Metadata",
+    "_meta": {
+      "title": "Image Saver Metadata"
+    }
+  },
+  "146": {
+    "inputs": {
+      "verbose": "true",
+      "image": "placeholder.png"
+    },
+    "class_type": "Image Load with Metadata (WLSH)",
+    "_meta": {
+      "title": "Image Load with Metadata (WLSH)"
+    }
+  },
+  "155": {
+    "inputs": {
+      "filename": "%time_%basemodelname_UPSCALE%seed",
+      "path": "",
+      "extension": "png",
+      "lossless_webp": true,
+      "quality_jpeg_or_webp": 100,
+      "optimize_png": false,
+      "embed_workflow": false,
+      "save_workflow_as_json": false,
+      "counter": 0,
+      "time_format": "%Y-%m-%d-%H%M%S",
+      "show_preview": true,
+      "images": [
+        "134",
+        0
+      ],
+      "metadata": [
+        "145",
+        0
+      ]
+    },
+    "class_type": "Image Saver Simple",
+    "_meta": {
+      "title": "Image Saver Simple"
+    }
+  }
+}

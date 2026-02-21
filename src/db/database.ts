@@ -46,6 +46,10 @@ function runMigrations(db: Database.Database): void {
     logger.info("Migration 003: size column added");
   }
 
+  // 004 — upscale_jobs table (CREATE TABLE IF NOT EXISTS — fully idempotent)
+  const sql004 = readFileSync(`${migrationDir}/004_upscale_jobs.sql`, "utf-8");
+  db.exec(sql004);
+
   logger.debug("Database migrations applied");
 }
 

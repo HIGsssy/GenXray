@@ -3,6 +3,7 @@
 // ---------------------------------------------------------------------------
 
 export type ImageSize = "portrait" | "square" | "landscape";
+export type UpscaleWorkflow = "ultimate" | "simple";
 
 export interface JobParams {
   userId: string;
@@ -20,6 +21,30 @@ export interface JobParams {
 }
 
 export type JobStatus = "queued" | "running" | "completed" | "failed" | "cancelled";
+
+export interface UpscaleJobParams {
+  userId: string;
+  guildId: string;
+  channelId: string;
+  sourceJobId: string;
+  sourceImageFilename: string;
+  model: string;
+  positivePrompt: string;
+  negativePrompt: string;
+  upscaleModel: string;
+}
+
+export interface UpscaleJobRow extends UpscaleJobParams {
+  id: string;
+  discordMessageId: string | null;
+  status: JobStatus;
+  comfyPromptId: string | null;
+  outputImages: string[] | null;
+  errorMessage: string | null;
+  createdAt: number;
+  startedAt: number | null;
+  completedAt: number | null;
+}
 
 export interface JobRow extends JobParams {
   id: string; // UUIDv4

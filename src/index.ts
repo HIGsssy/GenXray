@@ -5,6 +5,7 @@ import { getDb, closeDb } from "./db/database.js";
 import { comfyClient } from "./comfy/client.js";
 import { fetchOptions } from "./comfy/objectInfo.js";
 import { loadBaseWorkflow, validate as validateWorkflow } from "./comfy/workflowBinder.js";
+import { validateUpscaleWorkflows } from "./comfy/upscaleBinder.js";
 import { setDiscordClient } from "./queue/jobQueue.js";
 import { onInteractionCreate } from "./bot/events/interactionCreate.js";
 import { onReady } from "./bot/events/ready.js";
@@ -36,7 +37,16 @@ async function startup(): Promise<void> {
   }
   logger.info("base.json OK");
 
-  // 3. Ping ComfyUI
+  // 3. Validate upscale workflows
+  logger.info("Validating upscale workflows…");
+  const upscaleResult = validateUpscaleWorkflows();
+  if (!upscaleResult.ok) {
+    logger.fatal({ reason: upscaleResult.reason }, "Upscale workflow validation failed — cannot start");
+    process.exit(1);
+  }
+  logger.info(`Upscale workflows OK (active: ${config.upscale.workflow})`);
+
+  // 4. Ping ComfyUI
   logger.info({ url: config.comfy.baseUrl }, "Pinging ComfyUI…");
   const alive = await comfyClient.ping();
   if (!alive) {
@@ -45,7 +55,7 @@ async function startup(): Promise<void> {
   }
   logger.info("ComfyUI reachable");
 
-  // 4. Fetch and validate option lists (also validates node class detection)
+  // 5. Fetch and validate option lists (also validates node class detection)
   logger.info("Fetching ComfyUI object_info…");
   try {
     await fetchOptions();
@@ -54,7 +64,7 @@ async function startup(): Promise<void> {
     process.exit(1);
   }
 
-  // 5. Build Discord client
+  // 6. Build Discord client
   const client = new Client({
     intents: [GatewayIntentBits.Guilds],
   });

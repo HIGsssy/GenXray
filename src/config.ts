@@ -37,6 +37,8 @@ const ConfigSchema = z.object({
   DB_PATH: z.string().default("./data/comfygen.db"),
   LOG_LEVEL: z.enum(["trace", "debug", "info", "warn", "error", "fatal"]).default("info"),
   DEFAULT_NEGATIVE_PROMPT: z.string().default(""),
+  UPSCALE_MODEL: z.string().default("RealESRGAN_x4plus_anime_6B.pth"),
+  UPSCALE_WORKFLOW: z.enum(["ultimate", "simple"]).default("ultimate"),
 });
 
 const parsed = ConfigSchema.safeParse(process.env);
@@ -55,6 +57,10 @@ export const config = {
     clientId: env.DISCORD_CLIENT_ID,
     guildId: env.DISCORD_GUILD_ID,
     allowedChannelIds: env.ALLOWED_CHANNEL_IDS.split(",").map((s) => s.trim()).filter(Boolean),
+  },
+  upscale: {
+    model: env.UPSCALE_MODEL,
+    workflow: env.UPSCALE_WORKFLOW,
   },
   comfy: {
     baseUrl: env.COMFY_BASE_URL.replace(/\/$/, ""),
