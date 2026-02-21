@@ -39,6 +39,7 @@ const ConfigSchema = z.object({
   DEFAULT_NEGATIVE_PROMPT: z.string().default(""),
   UPSCALE_MODEL: z.string().default("RealESRGAN_x4plus_anime_6B.pth"),
   UPSCALE_WORKFLOW: z.enum(["ultimate", "simple"]).default("ultimate"),
+  UPSCALE_ENABLED: z.preprocess((v) => v !== "false" && v !== "0" && v !== "", z.boolean()).default(true),
 });
 
 const parsed = ConfigSchema.safeParse(process.env);
@@ -59,6 +60,7 @@ export const config = {
     allowedChannelIds: env.ALLOWED_CHANNEL_IDS.split(",").map((s) => s.trim()).filter(Boolean),
   },
   upscale: {
+    enabled: env.UPSCALE_ENABLED,
     model: env.UPSCALE_MODEL,
     workflow: env.UPSCALE_WORKFLOW,
   },

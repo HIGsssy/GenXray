@@ -379,6 +379,11 @@ export async function onInteractionCreate(interaction: Interaction): Promise<voi
     interaction.isButton() &&
     interaction.customId.startsWith(CUSTOM_ID.UPSCALE_PREFIX + ":")
   ) {
+    if (!config.upscale.enabled) {
+      await interaction.reply({ content: "Upscaling is currently disabled.", ephemeral: true });
+      return;
+    }
+
     const jobId = interaction.customId.slice(CUSTOM_ID.UPSCALE_PREFIX.length + 1);
 
     let job;

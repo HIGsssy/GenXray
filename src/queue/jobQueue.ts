@@ -305,12 +305,18 @@ async function postSuccess(
       .setLabel("🗑️ Delete")
       .setStyle(ButtonStyle.Danger);
 
-    const upscaleButton = new ButtonBuilder()
-      .setCustomId(`${CUSTOM_ID.UPSCALE_PREFIX}:${jobId}`)
-      .setLabel("⬆️ Upscale")
-      .setStyle(ButtonStyle.Success);
+    const buttons: ButtonBuilder[] = [shareButton, rerollButton, editButton];
 
-    const shareRow = new ActionRowBuilder<ButtonBuilder>().addComponents(shareButton, rerollButton, editButton, upscaleButton, deleteButton);
+    if (config.upscale.enabled) {
+      const upscaleButton = new ButtonBuilder()
+        .setCustomId(`${CUSTOM_ID.UPSCALE_PREFIX}:${jobId}`)
+        .setLabel("⬆️ Upscale")
+        .setStyle(ButtonStyle.Success);
+      buttons.push(upscaleButton);
+    }
+
+    buttons.push(deleteButton);
+    const shareRow = new ActionRowBuilder<ButtonBuilder>().addComponents(...buttons);
 
     await channel.send({
       content: `<@${userId}>`,
