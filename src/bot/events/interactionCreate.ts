@@ -2,6 +2,9 @@ import type { Interaction, ButtonBuilder } from "discord.js";
 import { PermissionFlagsBits } from "discord.js";
 import { v4 as uuidv4 } from "uuid";
 import { execute as genExecute } from "../commands/gen.js";
+import { execute as bannedExecute } from "../commands/banned.js";
+import { guardPrompt } from "../promptGuard.js";
+import { buildBannedWordEmbed, buildBannedEditButtonRow, BANNED_EDIT_CUSTOM_ID } from "../components/bannedWordEmbed.js";
 import {
   CUSTOM_ID,
   buildFormEmbed,
@@ -25,10 +28,15 @@ import type { JobParams, ImageSize } from "../../queue/types.js";
 
 export async function onInteractionCreate(interaction: Interaction): Promise<void> {
   // ---------------------------------------------------------------------------
-  // 1. Slash command: /gen
+  // 1. Slash commands
   // ---------------------------------------------------------------------------
   if (interaction.isChatInputCommand() && interaction.commandName === "gen") {
     await genExecute(interaction);
+    return;
+  }
+
+  if (interaction.isChatInputCommand() && interaction.commandName === "banned") {
+    await bannedExecute(interaction);
     return;
   }
 
@@ -81,6 +89,17 @@ export async function onInteractionCreate(interaction: Interaction): Promise<voi
       return;
     }
 
+    // "Edit Prompt" button shown on the banned-word rejection embed
+    if (interaction.customId === BANNED_EDIT_CUSTOM_ID) {
+      const draft = getDraft(userId);
+      if (!draft) {
+        await interaction.reply({ content: "Your session has expired. Run `/gen` again.", ephemeral: true });
+        return;
+      }
+      await interaction.showModal(buildPromptModal(draft));
+      return;
+    }
+
     if (interaction.customId === CUSTOM_ID.BTN_GENERATE) {
       const draft = getDraft(userId);
       if (!draft) {
@@ -112,6 +131,17 @@ export async function onInteractionCreate(interaction: Interaction): Promise<voi
       // Build full JobParams
       if (!interaction.guildId) {
         await interaction.reply({ content: "This command can only be used in a server.", ephemeral: true });
+        return;
+      }
+
+      // Banned word guard
+      const bannedHits = guardPrompt(draft.positivePrompt, draft.negativePrompt);
+      if (bannedHits.length > 0) {
+        await interaction.reply({
+          embeds: [buildBannedWordEmbed(bannedHits)],
+          components: [buildBannedEditButtonRow()],
+          ephemeral: true,
+        });
         return;
       }
 
@@ -296,6 +326,16 @@ export async function onInteractionCreate(interaction: Interaction): Promise<voi
       positivePrompt: originalJob.positivePrompt,
       negativePrompt: originalJob.negativePrompt,
     };
+
+    // Banned word guard (catches words added after the original job was submitted)
+    const rerollBannedHits = guardPrompt(params.positivePrompt, params.negativePrompt);
+    if (rerollBannedHits.length > 0) {
+      await interaction.reply({
+        content: "⛔ This prompt can no longer be re-rolled because it contains banned terms.",
+        ephemeral: true,
+      });
+      return;
+    }
 
     insertJob(newJobId, params);
     const position = countQueuedBefore(newJobId) + 1;

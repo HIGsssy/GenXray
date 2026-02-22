@@ -50,6 +50,10 @@ function runMigrations(db: Database.Database): void {
   const sql004 = readFileSync(`${migrationDir}/004_upscale_jobs.sql`, "utf-8");
   db.exec(sql004);
 
+  // 006 — banned_words table (CREATE TABLE IF NOT EXISTS — fully idempotent)
+  const sql006 = readFileSync(`${migrationDir}/006_banned_words.sql`, "utf-8");
+  db.exec(sql006);
+
   logger.debug("Database migrations applied");
 }
 

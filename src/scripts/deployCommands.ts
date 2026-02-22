@@ -5,11 +5,12 @@
 import { REST, Routes } from "discord.js";
 import { config } from "../config.js";
 import { data as genCommand } from "../bot/commands/gen.js";
+import { data as bannedCommand } from "../bot/commands/banned.js";
 import { logger } from "../logger.js";
 
 const rest = new REST({ version: "10" }).setToken(config.discord.token);
 
-const commands = [genCommand.toJSON()];
+const commands = [genCommand.toJSON(), bannedCommand.toJSON()];
 
 logger.info(
   { guildId: config.discord.guildId, commandCount: commands.length },
