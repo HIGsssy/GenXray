@@ -235,15 +235,20 @@ export async function onInteractionCreate(interaction: Interaction): Promise<voi
       .setCustomId(`${CUSTOM_ID.EDIT_PREFIX}:${jobId}`)
       .setLabel("✏️ Edit")
       .setStyle(ButtonStyle.Secondary);
-    const upscaleBtn = new BtnBuilder()
-      .setCustomId(`${CUSTOM_ID.UPSCALE_PREFIX}:${jobId}`)
-      .setLabel("⬆️ Upscale")
-      .setStyle(ButtonStyle.Success);
     const deleteBtn = new BtnBuilder()
       .setCustomId(`${CUSTOM_ID.DELETE_PREFIX}:${jobId}`)
       .setLabel("🗑️ Delete")
       .setStyle(ButtonStyle.Danger);
-    const survivingRow = new ActionRowBuilder<ButtonBuilder>().addComponents(rerollBtn, editBtn, upscaleBtn, deleteBtn);
+    const survivingButtons: InstanceType<typeof BtnBuilder>[] = [rerollBtn, editBtn];
+    if (config.upscale.enabled) {
+      const upscaleBtn = new BtnBuilder()
+        .setCustomId(`${CUSTOM_ID.UPSCALE_PREFIX}:${jobId}`)
+        .setLabel("⬆️ Upscale")
+        .setStyle(ButtonStyle.Success);
+      survivingButtons.push(upscaleBtn);
+    }
+    survivingButtons.push(deleteBtn);
+    const survivingRow = new ActionRowBuilder<ButtonBuilder>().addComponents(...survivingButtons);
 
     // Edit the post in-place; remove Share Prompt, keep Re-roll + Edit + Delete
     await interaction.update({ embeds: [revealedEmbed], components: [survivingRow] });
