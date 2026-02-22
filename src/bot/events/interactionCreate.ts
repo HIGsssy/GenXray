@@ -40,6 +40,12 @@ export async function onInteractionCreate(interaction: Interaction): Promise<voi
     return;
   }
 
+  if (interaction.isChatInputCommand() && interaction.commandName === "purge") {
+    const { execute: purgeExecute } = await import("../commands/purge.js");
+    await purgeExecute(interaction);
+    return;
+  }
+
   // ---------------------------------------------------------------------------
   // 2. String select menus
   // ---------------------------------------------------------------------------

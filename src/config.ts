@@ -41,6 +41,8 @@ const ConfigSchema = z.object({
   UPSCALE_WORKFLOW: z.enum(["ultimate", "simple"]).default("ultimate"),
   UPSCALE_ENABLED: z.preprocess((v) => v !== "false" && v !== "0" && v !== "", z.boolean()).default(true),
   OWNER_ID: z.string().min(1, "OWNER_ID is required"),
+  PURGE_MAX_AGE_HOURS: z.coerce.number().int().positive().default(48),
+  PURGE_INTERVAL_HOURS: z.coerce.number().int().positive().default(6),
 });
 
 const parsed = ConfigSchema.safeParse(process.env);
@@ -78,4 +80,8 @@ export const config = {
   logLevel: env.LOG_LEVEL,
   defaultNegativePrompt: env.DEFAULT_NEGATIVE_PROMPT,
   ownerId: env.OWNER_ID,
+  purge: {
+    maxAgeHours: env.PURGE_MAX_AGE_HOURS,
+    intervalHours: env.PURGE_INTERVAL_HOURS,
+  },
 } as const;

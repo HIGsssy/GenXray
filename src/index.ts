@@ -7,6 +7,7 @@ import { fetchOptions } from "./comfy/objectInfo.js";
 import { loadBaseWorkflow, validate as validateWorkflow } from "./comfy/workflowBinder.js";
 import { validateUpscaleWorkflows } from "./comfy/upscaleBinder.js";
 import { setDiscordClient } from "./queue/jobQueue.js";
+import { startPurgeScheduler } from "./queue/purgeScheduler.js";
 import { onInteractionCreate } from "./bot/events/interactionCreate.js";
 import { onReady } from "./bot/events/ready.js";
 
@@ -20,7 +21,10 @@ async function startup(): Promise<void> {
   // 1. Database
   getDb();
 
-  // 2. Validate base workflow exists and is structurally valid
+  // 2. Start purge scheduler (runs first purge after 60 s)
+  startPurgeScheduler();
+
+  // 3. Validate base workflow exists and is structurally valid
   logger.info("Validating base workflow…");
   let baseWorkflow: Record<string, unknown>;
   try {
@@ -37,7 +41,7 @@ async function startup(): Promise<void> {
   }
   logger.info("base.json OK");
 
-  // 3. Validate upscale workflows
+  // 4. Validate upscale workflows
   logger.info("Validating upscale workflows…");
   const upscaleResult = validateUpscaleWorkflows();
   if (!upscaleResult.ok) {
@@ -46,7 +50,7 @@ async function startup(): Promise<void> {
   }
   logger.info(`Upscale workflows OK (active: ${config.upscale.workflow})`);
 
-  // 4. Ping ComfyUI
+  // 5. Ping ComfyUI
   logger.info({ url: config.comfy.baseUrl }, "Pinging ComfyUI…");
   const alive = await comfyClient.ping();
   if (!alive) {
@@ -55,7 +59,7 @@ async function startup(): Promise<void> {
   }
   logger.info("ComfyUI reachable");
 
-  // 5. Fetch and validate option lists (also validates node class detection)
+  // 6. Fetch and validate option lists (also validates node class detection)
   logger.info("Fetching ComfyUI object_info…");
   try {
     await fetchOptions();
@@ -64,7 +68,7 @@ async function startup(): Promise<void> {
     process.exit(1);
   }
 
-  // 6. Build Discord client
+  // 7. Build Discord client
   const client = new Client({
     intents: [GatewayIntentBits.Guilds],
   });
