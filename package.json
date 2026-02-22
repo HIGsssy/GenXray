@@ -8,8 +8,10 @@
     "dev": "tsx src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "deploy-commands": "tsx src/scripts/deployCommands.ts",
-    "import-banned-words": "tsx src/scripts/importBannedWords.ts",
+    "deploy-commands": "node dist/scripts/deployCommands.js",
+    "deploy-commands:dev": "tsx src/scripts/deployCommands.ts",
+    "import-banned-words": "node dist/scripts/importBannedWords.js",
+    "import-banned-words:dev": "tsx src/scripts/importBannedWords.ts",
     "lint": "eslint src --ext .ts"
   },
   "keywords": [],
