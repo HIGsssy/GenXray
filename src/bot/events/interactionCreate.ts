@@ -135,7 +135,7 @@ export async function onInteractionCreate(interaction: Interaction): Promise<voi
       }
 
       // Banned word guard
-      const bannedHits = guardPrompt(draft.positivePrompt, draft.negativePrompt);
+      const bannedHits = guardPrompt(draft.positivePrompt);
       if (bannedHits.length > 0) {
         await interaction.reply({
           embeds: [buildBannedWordEmbed(bannedHits)],
@@ -328,7 +328,7 @@ export async function onInteractionCreate(interaction: Interaction): Promise<voi
     };
 
     // Banned word guard (catches words added after the original job was submitted)
-    const rerollBannedHits = guardPrompt(params.positivePrompt, params.negativePrompt);
+    const rerollBannedHits = guardPrompt(params.positivePrompt);
     if (rerollBannedHits.length > 0) {
       await interaction.reply({
         content: "⛔ This prompt can no longer be re-rolled because it contains banned terms.",
