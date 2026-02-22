@@ -16,7 +16,7 @@ import { fileURLToPath } from "node:url";
 import { addBannedWord } from "../db/bannedWords.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const SEED_FILE = resolve(__dirname, "../../data/banned_words_seed.txt");
+const SEED_FILE = resolve(__dirname, "../../banned_words_seed.txt");
 const SYSTEM_USER = "system";
 
 let added = 0;

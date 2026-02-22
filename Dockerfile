@@ -39,6 +39,9 @@ COPY package.json ./
 COPY migrations/ ./migrations/
 COPY workflows/ ./workflows/
 
+# Copy banned words seed file (edit this file to bulk-load the banned word list)
+COPY banned_words_seed.txt ./banned_words_seed.txt
+
 # Default DB path — overridable via env var
 ENV DB_PATH=/app/data/comfygen.db
 
