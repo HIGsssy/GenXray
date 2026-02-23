@@ -43,6 +43,7 @@ const ConfigSchema = z.object({
   OWNER_ID: z.string().min(1, "OWNER_ID is required"),
   PURGE_MAX_AGE_HOURS: z.coerce.number().int().positive().default(48),
   PURGE_INTERVAL_HOURS: z.coerce.number().int().positive().default(6),
+  CIVITAI_API_KEY: z.string().optional(),
 });
 
 const parsed = ConfigSchema.safeParse(process.env);
@@ -84,4 +85,5 @@ export const config = {
     maxAgeHours: env.PURGE_MAX_AGE_HOURS,
     intervalHours: env.PURGE_INTERVAL_HOURS,
   },
+  civitaiApiKey: env.CIVITAI_API_KEY,
 } as const;

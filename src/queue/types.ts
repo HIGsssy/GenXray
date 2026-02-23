@@ -5,6 +5,12 @@
 export type ImageSize = "portrait" | "square" | "landscape";
 export type UpscaleWorkflow = "ultimate" | "simple";
 
+export interface LoraParam {
+  name: string;       // filename e.g. "my_lora_v1.safetensors"
+  strength: number;   // 0.1 – 2.0, default 1.0
+  triggerWords: string[]; // fetched from CivitAI; stripped before DB persist
+}
+
 export interface JobParams {
   userId: string;
   guildId: string;
@@ -18,6 +24,7 @@ export interface JobParams {
   size: ImageSize;
   positivePrompt: string;
   negativePrompt: string;
+  loras: (LoraParam | null)[]; // always length 4; null = empty slot
 }
 
 export type JobStatus = "queued" | "running" | "completed" | "failed" | "cancelled";

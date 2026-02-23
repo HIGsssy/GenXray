@@ -6,7 +6,7 @@ import {
   StringSelectMenuBuilder,
 } from "discord.js";
 import type { ComfyOptions } from "../../comfy/objectInfo.js";
-import type { JobRow, ImageSize } from "../../queue/types.js";
+import type { JobRow, ImageSize, LoraParam } from "../../queue/types.js";
 import { config } from "../../config.js";
 
 // ---------------------------------------------------------------------------
@@ -18,6 +18,7 @@ export const CUSTOM_ID = {
   SELECT_SAMPLER: "gen_select_sampler",
   SELECT_SCHEDULER: "gen_select_scheduler",
   BTN_EDIT_PROMPTS: "gen_btn_edit_prompts",
+  BTN_LORAS: "lora:open",
   BTN_GENERATE: "gen_btn_generate",
   MODAL_PROMPTS: "gen_modal_prompts",
   MODAL_FIELD_POS: "gen_field_positive",
@@ -53,6 +54,7 @@ export interface DraftParams {
   size: ImageSize;
   positivePrompt: string;
   negativePrompt: string;
+  loras: (LoraParam | null)[]; // always length 4; null = empty slot
 }
 
 const _drafts = new Map<string, DraftParams>();
@@ -73,6 +75,7 @@ export function initDraft(userId: string, options: ComfyOptions): DraftParams {
     size: "portrait",
     positivePrompt: "",
     negativePrompt: config.defaultNegativePrompt,
+    loras: Array(4).fill(null) as (LoraParam | null)[],
   };
   _drafts.set(userId, draft);
   return draft;
@@ -90,6 +93,7 @@ export function initDraftFromJob(userId: string, job: JobRow): DraftParams {
     size: job.size,
     positivePrompt: job.positivePrompt,
     negativePrompt: job.negativePrompt,
+    loras: job.loras ?? Array(4).fill(null),
   };
   _drafts.set(userId, draft);
   return draft;
@@ -116,6 +120,11 @@ export function deleteDraft(userId: string): void {
 // ---------------------------------------------------------------------------
 
 export function buildFormEmbed(draft: DraftParams): EmbedBuilder {
+  const activeLoras = draft.loras.filter(Boolean) as LoraParam[];
+  const loraField = activeLoras.length > 0
+    ? activeLoras.map((l) => `• ${l.name} (strength: ${l.strength.toFixed(1)})`).join("\n")
+    : "_none_";
+
   return new EmbedBuilder()
     .setTitle("Image Generation")
     .setColor(0x5865f2)
@@ -136,6 +145,7 @@ export function buildFormEmbed(draft: DraftParams): EmbedBuilder {
         name: "Negative Prompt",
         value: draft.negativePrompt.length > 0 ? `\`\`\`${draft.negativePrompt.slice(0, 300)}\`\`\`` : "_none_",
       },
+      { name: `🎨 LoRAs (${activeLoras.length})`, value: loraField },
     );
 }
 
@@ -184,11 +194,17 @@ export function buildSelectRows(
   ];
 }
 
-export function buildButtonRow(): ActionRowBuilder<ButtonBuilder> {
+export function buildButtonRow(draft: DraftParams): ActionRowBuilder<ButtonBuilder> {
+  const activeCount = draft.loras.filter(Boolean).length;
+  const loraLabel = activeCount > 0 ? `🎨 LoRAs (${activeCount})` : "🎨 LoRAs";
   return new ActionRowBuilder<ButtonBuilder>().addComponents(
     new ButtonBuilder()
       .setCustomId(CUSTOM_ID.BTN_EDIT_PROMPTS)
       .setLabel("Edit Prompts")
+      .setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder()
+      .setCustomId(CUSTOM_ID.BTN_LORAS)
+      .setLabel(loraLabel)
       .setStyle(ButtonStyle.Secondary),
     new ButtonBuilder()
       .setCustomId(CUSTOM_ID.BTN_GENERATE)

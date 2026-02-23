@@ -15,16 +15,25 @@ import {
   deleteDraft,
   initDraftFromJob,
 } from "../components/formEmbed.js";
+import {
+  LORA_CUSTOM_ID,
+  LORA_NONE_VALUE,
+  buildLoraEmbed,
+  buildLoraComponents,
+  buildLoraStrengthModal,
+  LoraStrengthSchema,
+} from "../components/loraEmbed.js";
 import { buildPromptModal, ModalSchema, resolveSeed, randomSeed } from "../components/promptModal.js";
 import { fetchOptions } from "../../comfy/objectInfo.js";
 import { validate as validateWorkflow, bind } from "../../comfy/workflowBinder.js";
+import { getTriggerWords } from "../../civitai/triggerWords.js";
 import { insertJob, countQueuedBefore, getJobOrThrow } from "../../db/jobs.js";
 import { insertUpscaleJob, countUpscaleQueuedBefore } from "../../db/upscaleJobs.js";
 import { enqueue, enqueueUpscale } from "../../queue/jobQueue.js";
 import { comfyClient } from "../../comfy/client.js";
 import { config } from "../../config.js";
 import { logger } from "../../logger.js";
-import type { JobParams, ImageSize } from "../../queue/types.js";
+import type { JobParams, ImageSize, LoraParam } from "../../queue/types.js";
 
 export async function onInteractionCreate(interaction: Interaction): Promise<void> {
   // ---------------------------------------------------------------------------
@@ -57,6 +66,36 @@ export async function onInteractionCreate(interaction: Interaction): Promise<voi
       return;
     }
 
+    // LoRA slot selects (async — trigger word fetch required)
+    if (interaction.customId.startsWith(LORA_CUSTOM_ID.SELECT_PREFIX)) {
+      const slotIndex = parseInt(interaction.customId.slice(LORA_CUSTOM_ID.SELECT_PREFIX.length), 10);
+      const selectedValue = interaction.values[0];
+
+      await interaction.deferUpdate();
+
+      const newLoras = ([...draft.loras] as (LoraParam | null)[]);
+      if (selectedValue === LORA_NONE_VALUE) {
+        newLoras[slotIndex] = null;
+      } else {
+        const existing = draft.loras[slotIndex];
+        const loraHash = await comfyClient.getLoraFileHash(selectedValue).catch(() => null);
+        const triggerWords = await getTriggerWords(selectedValue, config.civitaiApiKey, loraHash ?? undefined);
+        newLoras[slotIndex] = {
+          name: selectedValue,
+          strength: existing?.name === selectedValue ? existing.strength : 1.0,
+          triggerWords,
+        };
+      }
+
+      const updatedDraft = mergeDraft(userId, { loras: newLoras });
+      const loraOptions = await fetchOptions();
+      await interaction.editReply({
+        embeds: [buildLoraEmbed(updatedDraft)],
+        components: buildLoraComponents(updatedDraft, loraOptions.loras),
+      });
+      return;
+    }
+
     if (interaction.customId === CUSTOM_ID.SELECT_MODEL) {
       mergeDraft(userId, { model: interaction.values[0] });
     } else if (interaction.customId === CUSTOM_ID.SELECT_SAMPLER) {
@@ -74,7 +113,7 @@ export async function onInteractionCreate(interaction: Interaction): Promise<voi
 
     await interaction.update({
       embeds: [buildFormEmbed(updated)],
-      components: [...buildSelectRows(options, updated), buildButtonRow()],
+      components: [...buildSelectRows(options, updated), buildButtonRow(updated)],
     });
     return;
   }
@@ -103,6 +142,44 @@ export async function onInteractionCreate(interaction: Interaction): Promise<voi
         return;
       }
       await interaction.showModal(buildPromptModal(draft));
+      return;
+    }
+
+    if (interaction.customId === CUSTOM_ID.BTN_LORAS) {
+      const draft = getDraft(userId);
+      if (!draft) {
+        await interaction.reply({ content: "Your session has expired. Run `/gen` again.", ephemeral: true });
+        return;
+      }
+      const loraOptions = await fetchOptions();
+      await interaction.update({
+        embeds: [buildLoraEmbed(draft)],
+        components: buildLoraComponents(draft, loraOptions.loras),
+      });
+      return;
+    }
+
+    if (interaction.customId === LORA_CUSTOM_ID.BTN_BACK) {
+      const draft = getDraft(userId);
+      if (!draft) {
+        await interaction.reply({ content: "Your session has expired. Run `/gen` again.", ephemeral: true });
+        return;
+      }
+      const backOptions = await fetchOptions();
+      await interaction.update({
+        embeds: [buildFormEmbed(draft)],
+        components: [...buildSelectRows(backOptions, draft), buildButtonRow(draft)],
+      });
+      return;
+    }
+
+    if (interaction.customId === LORA_CUSTOM_ID.BTN_STRENGTH) {
+      const draft = getDraft(userId);
+      if (!draft) {
+        await interaction.reply({ content: "Your session has expired. Run `/gen` again.", ephemeral: true });
+        return;
+      }
+      await interaction.showModal(buildLoraStrengthModal(draft));
       return;
     }
 
@@ -164,6 +241,7 @@ export async function onInteractionCreate(interaction: Interaction): Promise<voi
         size: draft.size,
         positivePrompt: draft.positivePrompt,
         negativePrompt: draft.negativePrompt,
+        loras: draft.loras,
       };
 
       // Final bind validation with actual values
@@ -331,6 +409,7 @@ export async function onInteractionCreate(interaction: Interaction): Promise<voi
       size: originalJob.size,
       positivePrompt: originalJob.positivePrompt,
       negativePrompt: originalJob.negativePrompt,
+      loras: originalJob.loras,
     };
 
     // Banned word guard (catches words added after the original job was submitted)
@@ -418,7 +497,7 @@ export async function onInteractionCreate(interaction: Interaction): Promise<voi
     await interaction.reply({
       ephemeral: true,
       embeds: [buildFormEmbed(draft)],
-      components: [...buildSelectRows(editOptions, draft), buildButtonRow()],
+      components: [...buildSelectRows(editOptions, draft), buildButtonRow(draft)],
     });
     return;
   }
@@ -572,7 +651,7 @@ export async function onInteractionCreate(interaction: Interaction): Promise<voi
     const options = await fetchOptions();
     const embedPayload = {
       embeds: [buildFormEmbed(updated)],
-      components: [...buildSelectRows(options, updated), buildButtonRow()],
+      components: [...buildSelectRows(options, updated), buildButtonRow(updated)],
     };
 
     // isFromMessage() is true when the modal was opened by the "Edit Prompts"
@@ -582,6 +661,47 @@ export async function onInteractionCreate(interaction: Interaction): Promise<voi
       await interaction.update(embedPayload);
     } else {
       await interaction.reply({ ...embedPayload, ephemeral: true });
+    }
+    return;
+  }
+
+  // ---------------------------------------------------------------------------
+  // 10. LoRA strength modal submit
+  // ---------------------------------------------------------------------------
+  if (interaction.isModalSubmit() && interaction.customId === LORA_CUSTOM_ID.MODAL_STRENGTH) {
+    const userId = interaction.user.id;
+    const draft = getDraft(userId);
+    if (!draft) {
+      await interaction.reply({ content: "Your session has expired. Run `/gen` again.", ephemeral: true });
+      return;
+    }
+
+    const newLoras = [...draft.loras] as (LoraParam | null)[];
+    for (let i = 0; i < 4; i++) {
+      if (!newLoras[i]) continue;
+      const fieldId = `${LORA_CUSTOM_ID.MODAL_FIELD_PREFIX}${i}`;
+      let rawVal: string;
+      try {
+        rawVal = interaction.fields.getTextInputValue(fieldId);
+      } catch {
+        continue; // field not present (slot inactive)
+      }
+      const parsed = LoraStrengthSchema.safeParse(rawVal);
+      if (parsed.success) {
+        newLoras[i] = { ...newLoras[i]!, strength: parsed.data };
+      }
+    }
+
+    const updatedDraft = mergeDraft(userId, { loras: newLoras });
+    const loraOptions = await fetchOptions();
+    const loraPayload = {
+      embeds: [buildLoraEmbed(updatedDraft)],
+      components: buildLoraComponents(updatedDraft, loraOptions.loras),
+    };
+    if (interaction.isFromMessage()) {
+      await interaction.update(loraPayload);
+    } else {
+      await interaction.reply({ ...loraPayload, ephemeral: true });
     }
     return;
   }

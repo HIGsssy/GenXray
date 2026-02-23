@@ -50,6 +50,14 @@ function runMigrations(db: Database.Database): void {
   const sql004 = readFileSync(`${migrationDir}/004_upscale_jobs.sql`, "utf-8");
   db.exec(sql004);
 
+  // 005 — add loras column to jobs (guard against duplicate ALTER TABLE)
+  const cols005 = db.prepare("PRAGMA table_info(jobs)").all() as { name: string }[];
+  if (!cols005.some((c) => c.name === "loras")) {
+    const sql005 = readFileSync(`${migrationDir}/005_add_loras.sql`, "utf-8");
+    db.exec(sql005);
+    logger.info("Migration 005: loras column added");
+  }
+
   // 006 — banned_words table (CREATE TABLE IF NOT EXISTS — fully idempotent)
   const sql006 = readFileSync(`${migrationDir}/006_banned_words.sql`, "utf-8");
   db.exec(sql006);

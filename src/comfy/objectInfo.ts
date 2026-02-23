@@ -5,6 +5,7 @@ export interface ComfyOptions {
   models: string[];
   samplers: string[];
   schedulers: string[];
+  loras: string[];
 }
 
 // ---------------------------------------------------------------------------
@@ -34,6 +35,14 @@ function getNodeInputList(
   // ComfyUI field defs: [listOrType, config?]
   const listOrType = fieldDef[0];
   return pickStrings(listOrType);
+}
+
+// ---------------------------------------------------------------------------
+// LoRA detection
+// ---------------------------------------------------------------------------
+
+export function getLoras(objectInfo: Record<string, unknown>): string[] {
+  return getNodeInputList(objectInfo, "LoraLoader", "lora_name") ?? [];
 }
 
 // ---------------------------------------------------------------------------
@@ -147,14 +156,19 @@ export async function fetchOptions(): Promise<ComfyOptions> {
     return arr;
   };
 
+  // LoRAs — optional, no fatal error if none found; cap at 100 for the select menus
+  const allLoras = getLoras(objectInfo);
+  const loras = allLoras.length > 100 ? allLoras.slice(0, 100) : allLoras;
+
   _cached = {
     models: cap(models, "models"),
     samplers: cap(samplers, "samplers"),
     schedulers: cap(schedulers, "schedulers"),
+    loras,
   };
 
   logger.info(
-    { models: _cached.models.length, samplers: _cached.samplers.length, schedulers: _cached.schedulers.length },
+    { models: _cached.models.length, samplers: _cached.samplers.length, schedulers: _cached.schedulers.length, loras: _cached.loras.length },
     "ComfyUI options loaded",
   );
   return _cached;

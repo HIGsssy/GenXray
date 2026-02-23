@@ -1,5 +1,5 @@
 import { getDb } from "./database.js";
-import type { JobRow, JobParams, JobStatus, ImageSize } from "../queue/types.js";
+import type { JobRow, JobParams, JobStatus, ImageSize, LoraParam } from "../queue/types.js";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -22,6 +22,14 @@ function rowToJob(row: Record<string, unknown>): JobRow {
     size: ((row.size as string) ?? "portrait") as ImageSize,
     positivePrompt: row.positive_prompt as string,
     negativePrompt: row.negative_prompt as string,
+    loras: (() => {
+      try {
+        const parsed = JSON.parse((row.loras as string | null) ?? "[]") as (Omit<LoraParam, "triggerWords"> | null)[];
+        return parsed.map((l) => l ? { ...l, triggerWords: [] } : null) as (LoraParam | null)[];
+      } catch {
+        return Array(4).fill(null) as (LoraParam | null)[];
+      }
+    })(),
     comfyPromptId: (row.comfy_prompt_id as string | null) ?? null,
     outputImages: row.output_images ? JSON.parse(row.output_images as string) : null,
     errorMessage: (row.error_message as string | null) ?? null,
@@ -42,11 +50,11 @@ export function insertJob(id: string, params: JobParams): JobRow {
     INSERT INTO jobs (
       id, discord_user_id, discord_guild_id, discord_channel_id,
       status, model, sampler, scheduler, steps, cfg, seed, size,
-      positive_prompt, negative_prompt, created_at
+      positive_prompt, negative_prompt, loras, created_at
     ) VALUES (
       ?, ?, ?, ?,
       'queued', ?, ?, ?, ?, ?, ?, ?,
-      ?, ?, ?
+      ?, ?, ?, ?
     )
   `).run(
     id,
@@ -62,6 +70,7 @@ export function insertJob(id: string, params: JobParams): JobRow {
     params.size,
     params.positivePrompt,
     params.negativePrompt,
+    JSON.stringify((params.loras ?? Array(4).fill(null)).map((l) => l ? { name: l.name, strength: l.strength } : null)),
     now,
   );
   return getJobOrThrow(id);

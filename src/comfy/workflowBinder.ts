@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import type { JobRow } from "../queue/types.js";
+import type { JobRow, LoraParam } from "../queue/types.js";
 import { logger } from "../logger.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -110,6 +110,59 @@ export function loadBaseWorkflow(): Record<string, unknown> {
 }
 
 // ---------------------------------------------------------------------------
+// LoRA injection
+// ---------------------------------------------------------------------------
+
+/**
+ * Injects LoraLoader nodes into the workflow for each active LoRA.
+ * The first node chains from checkpoint node "152"; each subsequent node
+ * chains from the previous. After injection, all other nodes that referenced
+ * "152" for MODEL (output 0) or CLIP (output 1) are re-pointed to the last
+ * LoRA node so the chain is complete.
+ */
+function injectLoras(wf: Record<string, unknown>, loras: (LoraParam | null)[]): void {
+  const active = loras.filter((l): l is LoraParam => l !== null).slice(0, 4);
+  if (active.length === 0) return;
+
+  const loraNodeIds = active.map((_, i) => String(2001 + i));
+
+  // Build LoraLoader nodes
+  for (let i = 0; i < active.length; i++) {
+    const id = loraNodeIds[i];
+    const prevId = i === 0 ? "152" : loraNodeIds[i - 1];
+    wf[id] = {
+      class_type: "LoraLoader",
+      inputs: {
+        model: [prevId, 0],
+        clip: [prevId, 1],
+        lora_name: active[i].name,
+        strength_model: active[i].strength,
+        strength_clip: active[i].strength,
+      },
+    };
+  }
+
+  const lastLoraId = loraNodeIds[loraNodeIds.length - 1];
+
+  // Re-point all existing nodes (not the new LoRA nodes) that reference node "152"
+  // for MODEL (output 0) or CLIP (output 1)
+  for (const [nodeId, nodeData] of Object.entries(wf)) {
+    if (loraNodeIds.includes(nodeId)) continue;
+    if (typeof nodeData !== "object" || nodeData === null) continue;
+    const inp = (nodeData as Record<string, unknown>)["inputs"];
+    if (typeof inp !== "object" || inp === null) continue;
+    for (const [field, val] of Object.entries(inp as Record<string, unknown>)) {
+      if (!Array.isArray(val) || val.length < 2) continue;
+      if (val[0] === "152" && val[1] === 0) {
+        (inp as Record<string, unknown>)[field] = [lastLoraId, 0];
+      } else if (val[0] === "152" && val[1] === 1) {
+        (inp as Record<string, unknown>)[field] = [lastLoraId, 1];
+      }
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
 // validate()
 // ---------------------------------------------------------------------------
 
@@ -158,6 +211,11 @@ export function bind(job: JobRow): BindResult {
   // Deep clone so each job gets its own copy
   const wf: Record<string, unknown> = JSON.parse(JSON.stringify(base));
 
+  // Inject LoRA nodes if any are active (must happen before re-pointing refs)
+  if (job.loras && job.loras.some(Boolean)) {
+    injectLoras(wf, job.loras);
+  }
+
   // Node "6" — latent image size
   const [w, h] = SIZE_MAP[job.size] ?? SIZE_MAP["portrait"];
   setField(wf, "6", "width", w);
@@ -169,8 +227,12 @@ export function bind(job: JobRow): BindResult {
   // Node "256" — Seed Generator: inject resolved seed
   setField(wf, "256", "seed", job.seed);
 
-  // Node "268" — positive prompt
-  setField(wf, "268", "text", job.positivePrompt);
+  // Node "268" — positive prompt (combined with LoRA trigger words)
+  const triggerWords = (job.loras ?? [])
+    .filter((l): l is LoraParam => l !== null)
+    .flatMap((l) => l.triggerWords);
+  const combinedPrompt = [job.positivePrompt, ...triggerWords].filter(Boolean).join(" ").trim();
+  setField(wf, "268", "text", combinedPrompt || job.positivePrompt);
 
   // Node "4" — negative prompt
   setField(wf, "4", "text", job.negativePrompt);
