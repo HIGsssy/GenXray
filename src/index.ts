@@ -5,6 +5,7 @@ import { getDb, closeDb } from "./db/database.js";
 import { comfyClient } from "./comfy/client.js";
 import { fetchOptions } from "./comfy/objectInfo.js";
 import { loadBaseWorkflow, validate as validateWorkflow } from "./comfy/workflowBinder.js";
+import { validateWildcardWorkflow } from "./comfy/wildcardBinder.js";
 import { validateUpscaleWorkflows } from "./comfy/upscaleBinder.js";
 import { setDiscordClient } from "./queue/jobQueue.js";
 import { startPurgeScheduler } from "./queue/purgeScheduler.js";
@@ -24,22 +25,30 @@ async function startup(): Promise<void> {
   // 2. Start purge scheduler (runs first purge after 60 s)
   startPurgeScheduler();
 
-  // 3. Validate base workflow exists and is structurally valid
-  logger.info("Validating base workflow…");
-  let baseWorkflow: Record<string, unknown>;
-  try {
-    baseWorkflow = loadBaseWorkflow();
-  } catch (err) {
-    logger.fatal({ err }, "Could not load workflows/multisampler/base.json — cannot start");
-    process.exit(1);
+  // 3. Validate active gen workflow exists and is structurally valid
+  logger.info({ workflow: config.gen.workflow }, "Validating gen workflow…");
+  if (config.gen.workflow === "wildcard") {
+    const wfResult = validateWildcardWorkflow();
+    if (!wfResult.ok) {
+      logger.fatal({ reason: wfResult.reason }, "workflows/wildcard/base.json failed validation — cannot start");
+      process.exit(1);
+    }
+    logger.info("wildcard base.json OK");
+  } else {
+    let baseWorkflow: Record<string, unknown>;
+    try {
+      baseWorkflow = loadBaseWorkflow();
+    } catch (err) {
+      logger.fatal({ err }, "Could not load workflows/multisampler/base.json — cannot start");
+      process.exit(1);
+    }
+    const wfResult = validateWorkflow(baseWorkflow);
+    if (!wfResult.ok) {
+      logger.fatal({ reason: wfResult.reason }, "base.json failed validation — cannot start");
+      process.exit(1);
+    }
+    logger.info("base.json OK");
   }
-
-  const wfResult = validateWorkflow(baseWorkflow);
-  if (!wfResult.ok) {
-    logger.fatal({ reason: wfResult.reason }, "base.json failed validation — cannot start");
-    process.exit(1);
-  }
-  logger.info("base.json OK");
 
   // 4. Validate upscale workflows
   logger.info("Validating upscale workflows…");

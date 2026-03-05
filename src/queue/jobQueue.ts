@@ -1,6 +1,7 @@
 import type { TextChannel, ButtonBuilder, InteractionWebhook } from "discord.js";
 import { comfyClient } from "../comfy/client.js";
 import { bind } from "../comfy/workflowBinder.js";
+import { bind as bindWildcard } from "../comfy/wildcardBinder.js";
 import { bindUpscale } from "../comfy/upscaleBinder.js";
 import { getJobOrThrow, setJobRunning, setJobCompleted, setJobFailed } from "../db/jobs.js";
 import {
@@ -106,7 +107,7 @@ async function runGenJob(jobId: string, webhook: InteractionWebhook | undefined)
     const job = getJobOrThrow(jobId);
 
     // Bind workflow
-    const bindResult = bind(job);
+    const bindResult = config.gen.workflow === "wildcard" ? bindWildcard(job) : bind(job);
     if (!bindResult.ok) {
       await setJobFailed(jobId, `Workflow bind failed: ${bindResult.reason}`);
       await notifyFailure(job.channelId, job.userId, jobId, bindResult.reason);

@@ -40,6 +40,7 @@ const ConfigSchema = z.object({
   UPSCALE_MODEL: z.string().default("RealESRGAN_x4plus_anime_6B.pth"),
   UPSCALE_WORKFLOW: z.enum(["ultimate", "simple"]).default("ultimate"),
   UPSCALE_ENABLED: z.preprocess((v) => v !== "false" && v !== "0" && v !== "", z.boolean()).default(true),
+  GEN_WORKFLOW: z.enum(["multisampler", "wildcard"]).default("multisampler"),
   OWNER_ID: z.string().min(1, "OWNER_ID is required"),
   PURGE_MAX_AGE_HOURS: z.coerce.number().int().positive().default(48),
   PURGE_INTERVAL_HOURS: z.coerce.number().int().positive().default(6),
@@ -62,6 +63,9 @@ export const config = {
     clientId: env.DISCORD_CLIENT_ID,
     guildId: env.DISCORD_GUILD_ID,
     allowedChannelIds: env.ALLOWED_CHANNEL_IDS.split(",").map((s) => s.trim()).filter(Boolean),
+  },
+  gen: {
+    workflow: env.GEN_WORKFLOW,
   },
   upscale: {
     enabled: env.UPSCALE_ENABLED,
